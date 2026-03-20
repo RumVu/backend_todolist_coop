@@ -70,12 +70,9 @@ let AuthRepository = class AuthRepository {
     deleteRefreshTokenByUserId(userId) {
         console.log(`Revoking refresh tokens for user ID: ${userId}`);
     }
-    chea;
 };
 exports.AuthRepository = AuthRepository;
 exports.AuthRepository = AuthRepository = __decorate([
     (0, common_1.Injectable)()
 ], AuthRepository);
-{
-}
 //# sourceMappingURL=auth.repository.js.map

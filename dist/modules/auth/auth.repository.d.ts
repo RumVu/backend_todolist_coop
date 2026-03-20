@@ -26,5 +26,4 @@ export declare class AuthRepository {
     updateUserAccount(userId: string, updates: Partial<Omit<AuthUserRecord, 'id' | 'createdAt'>>): AuthUserRecord | null;
     saveRefreshToken(tokenRecord: refreshTokenRecord): void;
     deleteRefreshTokenByUserId(userId: string): void;
-    chea: any;
 }
