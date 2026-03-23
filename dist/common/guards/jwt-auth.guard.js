@@ -17,17 +17,22 @@ let JwtAuthGuard = class JwtAuthGuard {
     constructor(authService) {
         this.authService = authService;
     }
-    canActivate(context) {
+    async canActivate(context) {
         const request = context.switchToHttp().getRequest();
-        const authorizationHeader = request.headers.authorization;
-        if (!authorizationHeader) {
+        const authHeader = request.headers.authorization;
+        if (!authHeader) {
             throw new common_1.UnauthorizedException('Authorization header is required');
         }
-        const [type, token] = authorizationHeader.split(' ');
+        const [type, token] = authHeader.split(' ');
         if (type !== 'Bearer' || !token) {
             throw new common_1.UnauthorizedException('Authorization header is invalid');
         }
-        request.user = this.authService.validateAccessToken(token);
+        const payload = await this.authService.validateAccessToken(token);
+        request.user = {
+            userId: payload.sub,
+            email: payload.email,
+            name: payload.name,
+        };
         return true;
     }
 };

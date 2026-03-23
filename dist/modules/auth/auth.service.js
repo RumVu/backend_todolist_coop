@@ -27,14 +27,21 @@ let AuthService = class AuthService {
     hashPassword(password) {
         return (0, crypto_1.createHash)('sha256').update(password).digest('hex');
     }
+    hashValue(value) {
+        return (0, crypto_1.createHash)("sha256").update(value).digest("hex");
+    }
     async register(registerDto) {
         const normalizedEmail = registerDto.email.trim().toLowerCase();
-        const normalizedUsername = registerDto.name.trim().toLowerCase();
+        const normalizedUsername = registerDto.username.trim().toLowerCase();
+        const normalizedName = registerDto.name.trim();
         if (!normalizedEmail) {
             throw new common_1.BadRequestException("Email must not be empty");
         }
         if (!normalizedUsername) {
             throw new common_1.BadRequestException("Username must not be empty");
+        }
+        if (!normalizedName) {
+            throw new common_1.BadRequestException("Name must not be empty");
         }
         const existingUserByEmail = this.authRepository.findByEmail(normalizedEmail);
         if (existingUserByEmail) {
@@ -44,14 +51,18 @@ let AuthService = class AuthService {
         if (existingUserByUsername) {
             throw new common_1.BadRequestException(`Username ${normalizedUsername} is already in use,please change to another username!`);
         }
+        if (registerDto.password !== registerDto.confirmPassword) {
+            throw new common_1.BadRequestException('Password confirmation does not match');
+        }
         const userAccount = this.authRepository.createAccount({
             id: (0, crypto_1.randomUUID)(),
             email: normalizedEmail,
-            name: normalizedUsername,
+            name: normalizedName,
+            username: normalizedUsername,
             phoneNum: registerDto.phoneNum,
             isActive: true,
             passwordHash: this.hashPassword(registerDto.password),
-            passwordSalt: ""
+            passwordSalt: ''
         });
         const tokens = await this.generateTokens(userAccount);
         return {
@@ -62,11 +73,70 @@ let AuthService = class AuthService {
             tokens
         };
     }
+    async login(loginDto) {
+        const normalizedEmail = loginDto.email.trim().toLowerCase();
+        const user = this.authRepository.findByEmail(normalizedEmail);
+        if (!user) {
+            throw new common_1.UnauthorizedException('Email or password is incorrect');
+        }
+        if (!user.isActive) {
+            throw new common_1.UnauthorizedException('User account is inactive');
+        }
+        const passwordHash = this.hashPassword(loginDto.password);
+        if (user.passwordHash !== passwordHash) {
+            throw new common_1.UnauthorizedException('Email or password is incorrect');
+        }
+        const tokens = await this.generateTokens(user);
+        return {
+            message: 'Login successfully',
+            data: {
+                userAccount: this.toProfileAccount(user),
+            },
+            tokens,
+        };
+    }
+    async logout(payload) {
+        const refreshPayload = await this.verifyRefreshToken(payload.refreshToken);
+        const storedRefreshToken = this.authRepository.findRefreshTokenById(refreshPayload.tokenId);
+        if (!storedRefreshToken) {
+            return {
+                message: "Logout successfully",
+                data: null
+            };
+        }
+        if (storedRefreshToken.tokenHash !== this.hashValue(payload.refreshToken)) {
+            this.authRepository.deleteRefreshToken(refreshPayload.tokenId);
+            throw new common_1.UnauthorizedException("Refresh token is invalid");
+        }
+        this.authRepository.deleteRefreshToken(refreshPayload.tokenId);
+        return {
+            message: "Logout successfully",
+            data: null
+        };
+    }
+    async validateAccessToken(token) {
+        try {
+            const payload = await this.jwtService.verifyAsync(token, {
+                secret: this.configService.getOrThrow("auth.accessSecret")
+            });
+            if (payload.type !== "access") {
+                throw new common_1.UnauthorizedException("Access token type is invalid");
+            }
+            return payload;
+        }
+        catch (error) {
+            if (error instanceof common_1.UnauthorizedException) {
+                throw error;
+            }
+            throw new common_1.UnauthorizedException("Invalid or expired access token");
+        }
+    }
     async generateTokens(user) {
         const tokenID = (0, crypto_1.randomUUID)();
         const accessTokenPayload = {
             sub: user.id,
             email: user.email,
+            username: user.username,
             name: user.name,
             iat: Math.floor(Date.now() / 1000),
             exp: Math.floor(Date.now() / 1000) + 15 * 60,
@@ -79,7 +149,7 @@ let AuthService = class AuthService {
             name: user.name,
             iat: Math.floor(Date.now() / 1000),
             exp: Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60,
-            tokenID,
+            tokenId: tokenID,
             type: "refresh"
         };
         const [accessToken, refreshToken] = await Promise.all([
@@ -107,13 +177,77 @@ let AuthService = class AuthService {
         }
         return new Date(payload.exp * 1000).toISOString();
     }
-    hashValue(value) {
-        return (0, crypto_1.createHash)("sha256").update(value).digest("hex");
+    async verifyRefreshToken(token) {
+        try {
+            const payload = await this.jwtService.verifyAsync(token, {
+                secret: this.configService.getOrThrow("auth.refreshSecret")
+            });
+            if (payload.type !== "refresh") {
+                throw new common_1.UnauthorizedException("Refresh token type is invalid");
+            }
+            if (!payload.tokenId) {
+                throw new common_1.UnauthorizedException("Refresh token id is missing");
+            }
+            return payload;
+        }
+        catch (error) {
+            if (error instanceof common_1.UnauthorizedException) {
+                throw error;
+            }
+            throw new common_1.UnauthorizedException("Invalid or expired refresh token");
+        }
+    }
+    async refreshTokens(payload) {
+        const refreshPayload = await this.verifyRefreshToken(payload.refreshToken);
+        const storedRefreshToken = this.authRepository.findRefreshTokenById(refreshPayload.tokenId);
+        if (!storedRefreshToken) {
+            throw new common_1.UnauthorizedException("Refresh token is not recognized");
+        }
+        if (storedRefreshToken.userId !== refreshPayload.sub) {
+            throw new common_1.UnauthorizedException("Refresh token user mismatch");
+        }
+        if (storedRefreshToken.expiresAt <= new Date().toISOString()) {
+            this.authRepository.deleteRefreshToken(refreshPayload.tokenId);
+            throw new common_1.UnauthorizedException("Refresh token has expired");
+        }
+        if (storedRefreshToken.tokenHash !== this.hashValue(payload.refreshToken)) {
+            this.authRepository.deleteRefreshToken(refreshPayload.tokenId);
+            throw new common_1.UnauthorizedException("Refresh token is invalid");
+        }
+        const user = this.authRepository.findById(refreshPayload.sub);
+        if (!user) {
+            this.authRepository.deleteRefreshToken(refreshPayload.tokenId);
+            throw new common_1.UnauthorizedException("User not found");
+        }
+        if (!user.isActive) {
+            this.authRepository.deleteRefreshToken(refreshPayload.tokenId);
+            throw new common_1.UnauthorizedException("User account is inactive");
+        }
+        this.authRepository.deleteRefreshToken(refreshPayload.tokenId);
+        const tokens = await this.generateTokens(user);
+        return {
+            message: "Refresh token successfully",
+            data: {
+                userAccount: this.toProfileAccount(user)
+            },
+            tokens
+        };
+    }
+    getCurrentUser(userId) {
+        const user = this.authRepository.findById(userId);
+        if (!user) {
+            throw new common_1.UnauthorizedException("User not found");
+        }
+        return {
+            message: "Current user fetched successfully",
+            data: this.toProfileAccount(user)
+        };
     }
     toProfileAccount(user) {
         return {
             id: user.id,
             name: user.name,
+            username: user.username,
             email: user.email,
             isActive: user.isActive,
             createAt: user.createdAt,

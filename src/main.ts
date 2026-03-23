@@ -1,20 +1,26 @@
+import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
 
-import { AppConfigService } from "./config/app.config";
-import { ValidationPipe } from '@nestjs/common/pipes/validation.pipe';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  const appConfig = app.get(AppConfigService);
-  app.setGlobalPrefix(appConfig.apiPrefix);
+  const configService = app.get(ConfigService);
+
+  const apiPrefix = configService.get<string>('app.apiPrefix') ?? 'api';
+
+  app.setGlobalPrefix(apiPrefix);
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
       transform: true,
-      forbidNonWhitelisted: true
-    })
+      forbidNonWhitelisted: true,
+    }),
   );
-  await app.listen(process.env.PORT ?? 6969);
-  console.log(`Server is running on port http://localhost:${process.env.PORT ?? 6969}`);
+
+  const port = configService.get<number>('app.port') ?? 6969;
+  await app.listen(port);
+  console.log(`Server is running on http://localhost:${port}/${apiPrefix}`);
 }
+
 void bootstrap();

@@ -15,22 +15,29 @@ type AuthenticatedRequest = Request & {
 export class JwtAuthGuard implements CanActivate {
   constructor(private readonly authService: AuthService) {}
 
-  canActivate(context: ExecutionContext): boolean {
-    const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
-    const authorizationHeader = request.headers.authorization;
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+  const request = context.switchToHttp().getRequest();
+  const authHeader = request.headers.authorization;
 
-    if (!authorizationHeader) {
-      throw new UnauthorizedException('Authorization header is required');
-    }
-
-    const [type, token] = authorizationHeader.split(' ');
-
-    if (type !== 'Bearer' || !token) {
-      throw new UnauthorizedException('Authorization header is invalid');
-    }
-
-    request.user = this.authService.validateAccessToken(token);
-
-    return true;
+  if (!authHeader) {
+    throw new UnauthorizedException('Authorization header is required');
   }
+
+  const [type, token] = authHeader.split(' ');
+
+  if (type !== 'Bearer' || !token) {
+    throw new UnauthorizedException('Authorization header is invalid');
+  }
+
+  const payload = await this.authService.validateAccessToken(token);
+
+  request.user = {
+    userId: payload.sub,
+    email: payload.email,
+    name: payload.name,
+  };
+
+  return true;
+}
+
 }

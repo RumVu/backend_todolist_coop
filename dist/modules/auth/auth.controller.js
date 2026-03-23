@@ -14,21 +14,28 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthController = void 0;
 const common_1 = require("@nestjs/common");
-const auth_service_1 = require("./auth.service");
-const register_dto_1 = require("./dto/register.dto");
-const login_dto_1 = require("./dto/login.dto");
-const jwt_auth_guard_1 = require("../../common/guards/jwt-auth.guard");
 const current_user_decorator_1 = require("../../common/decorators/current-user.decorator");
+const jwt_auth_guard_1 = require("../../common/guards/jwt-auth.guard");
+const auth_service_1 = require("./auth.service");
+const login_dto_1 = require("./dto/login.dto");
+const refresh_token_dto_1 = require("./dto/refresh-token.dto");
+const register_dto_1 = require("./dto/register.dto");
 let AuthController = class AuthController {
     authService;
     constructor(authService) {
         this.authService = authService;
     }
-    register(payload) {
-        return this.authService.register(payload);
+    register(registerDto) {
+        return this.authService.register(registerDto);
     }
-    login(payload) {
-        return this.authService.login(payload);
+    login(loginDto) {
+        return this.authService.login(loginDto);
+    }
+    refresh(refreshTokenDto) {
+        return this.authService.refreshTokens(refreshTokenDto);
+    }
+    logout(refreshTokenDto) {
+        return this.authService.logout(refreshTokenDto);
     }
     me(userId) {
         return this.authService.getCurrentUser(userId);
@@ -49,6 +56,20 @@ __decorate([
     __metadata("design:paramtypes", [login_dto_1.LoginDto]),
     __metadata("design:returntype", void 0)
 ], AuthController.prototype, "login", null);
+__decorate([
+    (0, common_1.Post)('refresh'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [refresh_token_dto_1.RefreshTokenDto]),
+    __metadata("design:returntype", void 0)
+], AuthController.prototype, "refresh", null);
+__decorate([
+    (0, common_1.Post)('logout'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [refresh_token_dto_1.RefreshTokenDto]),
+    __metadata("design:returntype", void 0)
+], AuthController.prototype, "logout", null);
 __decorate([
     (0, common_1.Get)('me'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),

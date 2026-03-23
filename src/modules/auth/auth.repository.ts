@@ -4,6 +4,7 @@ import { Auth } from './entities/auth-session.entity';
 export interface AuthUserRecord {
     id: string;
     name: string;
+    username: string;
     email: string;
     phoneNum?: string;
     passwordHash: string;
@@ -16,6 +17,7 @@ export interface AuthUserRecord {
 export interface refreshTokenRecord {
     userId: string;
     tokenId: string;
+    tokenHash: string;
     expiresAt: string;
     createAt: string;
 }
@@ -41,6 +43,17 @@ export class AuthRepository {
 
         for (const user of this.users.values()) {
             if (user.name === normalizedUsername) {
+                return user;
+            }
+        }
+        return null;
+    }
+    
+    findByName(name: string): AuthUserRecord | null {
+        const normalizedName = name.trim().toLowerCase();
+
+        for (const user of this.users.values()) {
+            if (user.name === normalizedName) {
                 return user;
             }
         }
@@ -92,17 +105,42 @@ export class AuthRepository {
         return updatedUser;
     }
     //---------------------------------token----------------------------
-    saveRefreshToken(tokenRecord: refreshTokenRecord): void {
-        this.refreshTokens.set(tokenRecord.tokenId, tokenRecord);
-    }
+    saveRefreshToken(
+        token: Omit<refreshTokenRecord, "createdAt">
+    ): refreshTokenRecord {
+        const record: refreshTokenRecord = {
+            ...token,
+            createAt: new Date().toISOString()
+        };
 
+        this.refreshTokens.set(record.tokenId, record);
+
+        return record;
+    }
+    findRefreshToken(tokenId: string): refreshTokenRecord | null {
+        return this.refreshTokens.get(tokenId) || null;
+    }
     // In a real implementation, this would delete the refresh token from the database or in-memory store.
     // Since this is an in-memory repository, we can simply log the action or implement a token store if needed.
     deleteRefreshTokenByUserId(userId: string): void {
         console.log(`Revoking refresh tokens for user ID: ${userId}`);
     }
+    findRefreshTokenById(tokenId: string): refreshTokenRecord | null {
+        return this.refreshTokens.get(tokenId) ?? null;
+    }
+
+    deleteRefreshToken(tokenId: string): void {
+        this.refreshTokens.delete(tokenId);
+    }
+
+    deleteRefreshTokensByUserId(userId: string): void {
+        for (const [tokenId, token] of this.refreshTokens.entries()) {
+            if (token.userId === userId) {
+                this.refreshTokens.delete(tokenId);
+            }
+        }
+    }
 
 
-// check cái đoạn này
 
 }

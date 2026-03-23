@@ -29,6 +29,15 @@ let AuthRepository = class AuthRepository {
         }
         return null;
     }
+    findByName(name) {
+        const normalizedName = name.trim().toLowerCase();
+        for (const user of this.users.values()) {
+            if (user.name === normalizedName) {
+                return user;
+            }
+        }
+        return null;
+    }
     findByPhoneNum(phoneNum) {
         const normalizedPhoneNum = phoneNum.trim();
         for (const user of this.users.values()) {
@@ -64,11 +73,32 @@ let AuthRepository = class AuthRepository {
         this.users.set(userId, updatedUser);
         return updatedUser;
     }
-    saveRefreshToken(tokenRecord) {
-        this.refreshTokens.set(tokenRecord.tokenId, tokenRecord);
+    saveRefreshToken(token) {
+        const record = {
+            ...token,
+            createAt: new Date().toISOString()
+        };
+        this.refreshTokens.set(record.tokenId, record);
+        return record;
+    }
+    findRefreshToken(tokenId) {
+        return this.refreshTokens.get(tokenId) || null;
     }
     deleteRefreshTokenByUserId(userId) {
         console.log(`Revoking refresh tokens for user ID: ${userId}`);
+    }
+    findRefreshTokenById(tokenId) {
+        return this.refreshTokens.get(tokenId) ?? null;
+    }
+    deleteRefreshToken(tokenId) {
+        this.refreshTokens.delete(tokenId);
+    }
+    deleteRefreshTokensByUserId(userId) {
+        for (const [tokenId, token] of this.refreshTokens.entries()) {
+            if (token.userId === userId) {
+                this.refreshTokens.delete(tokenId);
+            }
+        }
     }
 };
 exports.AuthRepository = AuthRepository;

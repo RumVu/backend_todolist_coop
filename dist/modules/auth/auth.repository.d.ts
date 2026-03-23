@@ -1,6 +1,7 @@
 export interface AuthUserRecord {
     id: string;
     name: string;
+    username: string;
     email: string;
     phoneNum?: string;
     passwordHash: string;
@@ -12,6 +13,7 @@ export interface AuthUserRecord {
 export interface refreshTokenRecord {
     userId: string;
     tokenId: string;
+    tokenHash: string;
     expiresAt: string;
     createAt: string;
 }
@@ -20,10 +22,15 @@ export declare class AuthRepository {
     private readonly refreshTokens;
     findByEmail(email: string): AuthUserRecord | null;
     findByUsername(username: string): AuthUserRecord | null;
+    findByName(name: string): AuthUserRecord | null;
     findByPhoneNum(phoneNum: string): AuthUserRecord | null;
     findById(id: string): AuthUserRecord | null;
     createAccount(user: Omit<AuthUserRecord, 'createdAt' | 'updatedAt'>): AuthUserRecord;
     updateUserAccount(userId: string, updates: Partial<Omit<AuthUserRecord, 'id' | 'createdAt'>>): AuthUserRecord | null;
-    saveRefreshToken(tokenRecord: refreshTokenRecord): void;
+    saveRefreshToken(token: Omit<refreshTokenRecord, "createdAt">): refreshTokenRecord;
+    findRefreshToken(tokenId: string): refreshTokenRecord | null;
     deleteRefreshTokenByUserId(userId: string): void;
+    findRefreshTokenById(tokenId: string): refreshTokenRecord | null;
+    deleteRefreshToken(tokenId: string): void;
+    deleteRefreshTokensByUserId(userId: string): void;
 }
