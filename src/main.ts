@@ -11,6 +11,11 @@ async function bootstrap() {
   const apiPrefix = configService.get<string>('app.apiPrefix') ?? 'api';
 
   app.setGlobalPrefix(apiPrefix);
+  
+  // Set up a redirect from the root URL to Swagger so Vercel preview works immediately
+  const expressApp = app.getHttpAdapter().getInstance();
+  expressApp.get('/', (req: any, res: any) => res.redirect(`/${apiPrefix}/docs`));
+
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
