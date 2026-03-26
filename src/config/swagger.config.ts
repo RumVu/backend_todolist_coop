@@ -16,6 +16,13 @@ export function setupSwagger(app: INestApplication) {
         customCss: `
             @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
+            /* Reset toàn bộ font chữ về kiểu Pixel 8-bit, tắt bo góc */
+            .swagger-ui, .swagger-ui *, body {
+                font-family: 'Press Start 2P', system-ui !important;
+                border-radius: 0 !important;
+                font-size: 11px !important; /* Font pixel khá to nên phải thu nhỏ */
+            }
+
             /* Nền tối phong cách Arcade */
             body { background-color: #1a1a1a !important; margin: 20px; }
             .swagger-ui .scheme-container, .swagger-ui .info .base-url { background: transparent !important; color: #fff; }
