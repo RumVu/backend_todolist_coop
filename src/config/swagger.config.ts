@@ -16,34 +16,35 @@ export function setupSwagger(app: INestApplication) {
         customCss: `
             @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
-            /* Reset toàn bộ font chữ về kiểu Pixel 8-bit, tắt bo góc */
-            .swagger-ui, .swagger-ui *, body {
-                font-family: 'Press Start 2P', system-ui !important;
-                border-radius: 0 !important;
-                font-size: 11px !important; /* Font pixel khá to nên phải thu nhỏ */
-            }
-
             /* Nền tối phong cách Arcade */
             body { background-color: #1a1a1a !important; margin: 20px; }
             .swagger-ui .scheme-container, .swagger-ui .info .base-url { background: transparent !important; color: #fff; }
 
-            /* Đổ bóng kiểu Pixel cho tiêu đề */
+            /* Áp dụng font Pixel chỉ cho Heading và Text chính để không vỡ Layout */
+            .swagger-ui .info .title, .swagger-ui .info h1, .swagger-ui .info h2, .swagger-ui .opblock-summary-path {
+                font-family: 'Press Start 2P', system-ui !important;
+            }
+
+            /* Đổ bóng kiểu Pixel cho tiêu đề gốc */
             .swagger-ui .info .title {
                 color: #ffd700 !important; 
                 text-shadow: 2px 2px 0 #cc0000;
-                font-size: 24px !important;
             }
+            
+            /* Text thường màu xanh hacker */
+            .swagger-ui { color: #00ff00 !important; }
             .swagger-ui .info p { color: #aaaaaa !important; }
 
             /* Khung API phong cách màn hình xanh/đỏ */
             .swagger-ui .opblock {
                 background: #000 !important;
-                border: 3px solid #00ff00 !important;
+                border: 2px solid #00ff00 !important;
                 box-shadow: 4px 4px 0 #005500 !important;
                 margin-bottom: 25px !important;
+                border-radius: 0 !important;
             }
             .swagger-ui .opblock .opblock-summary { border-bottom: 1px dashed #00ff00 !important; padding: 10px !important; }
-            .swagger-ui .opblock .opblock-summary-path { color: #fff !important; font-size: 12px !important; }
+            .swagger-ui .opblock .opblock-summary-path { color: #fff !important; }
             .swagger-ui .opblock .opblock-summary-description { color: #00ff00 !important; }
 
             /* Nút phương thức HTTP Neon Retro */
@@ -51,27 +52,28 @@ export function setupSwagger(app: INestApplication) {
                 background: #ff00ff !important;
                 color: #fff !important;
                 border: 2px solid #fff !important;
-                box-shadow: 2px 2px 0 #aa00aa !important;
+                border-radius: 0 !important;
                 text-transform: uppercase;
-                min-width: 80px;
-                text-align: center;
             }
 
             /* Bảng thông số và form */
-            .swagger-ui table thead tr td, .swagger-ui table thead tr th { color: #ffd700 !important; border-bottom: 2px solid #00ff00; }
+            .swagger-ui table thead tr td, .swagger-ui table thead tr th { color: #ffd700 !important; border-bottom: 1px solid #00ff00; }
             .swagger-ui .parameter__name, .swagger-ui .parameter__type { color: #00ffff !important; }
+            
+            /* Input form */
             .swagger-ui input, .swagger-ui textarea, .swagger-ui select {
                 background: #111 !important;
                 border: 2px solid #fff !important;
                 color: #00ff00 !important;
+                border-radius: 0 !important;
             }
 
-            /* Nút bấm (Execute, Try it out) */
+            /* Nút bấm */
             .swagger-ui .btn {
                 background: #000 !important;
                 color: #ff00ff !important;
                 border: 2px solid #ff00ff !important;
-                box-shadow: 2px 2px 0 #aa00aa !important;
+                border-radius: 0 !important;
             }
             .swagger-ui .btn:hover { background: #ff00ff !important; color: #000 !important; }
 
