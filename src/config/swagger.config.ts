@@ -16,75 +16,69 @@ export function setupSwagger(app: INestApplication) {
         customCss: `
             @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
-            /* Reset toàn bộ font chữ về kiểu Pixel 8-bit, tắt bo góc */
+            /* Reset font and borders */
             .swagger-ui, .swagger-ui *, body {
                 font-family: 'Press Start 2P', system-ui !important;
                 border-radius: 0 !important;
-                font-size: 11px !important; /* Font pixel khá to nên phải thu nhỏ */
+                font-size: 11px !important;
             }
 
-            /* Nền tối phong cách Arcade */
-            body { background-color: #1a1a1a !important; margin: 20px; }
-            .swagger-ui .scheme-container, .swagger-ui .info .base-url { background: transparent !important; color: #fff; }
+            /* Dark espresso background */
+            body { background-color: #3B231D !important; margin: 20px; }
+            .swagger-ui .scheme-container, .swagger-ui .info .base-url { background: transparent !important; color: #CBB682; }
 
-            /* Áp dụng font Pixel chỉ cho Heading và Text chính để không vỡ Layout */
-            .swagger-ui .info .title, .swagger-ui .info h1, .swagger-ui .info h2, .swagger-ui .opblock-summary-path {
-                font-family: 'Press Start 2P', system-ui !important;
-            }
-
-            /* Đổ bóng kiểu Pixel cho tiêu đề gốc */
+            /* Sand/Beige color for titles and fonts */
             .swagger-ui .info .title {
-                color: #ffd700 !important; 
-                text-shadow: 2px 2px 0 #cc0000;
+                color: #CBB682 !important; 
+                text-shadow: 2px 2px 0 #986441;
+                font-size: 24px !important;
             }
             
-            /* Text thường màu xanh hacker */
-            .swagger-ui { color: #00ff00 !important; }
-            .swagger-ui .info p { color: #aaaaaa !important; }
+            /* Text colors */
+            .swagger-ui { color: #CBB682 !important; }
+            .swagger-ui .info p { color: #B48259 !important; }
 
-            /* Khung API phong cách màn hình xanh/đỏ */
+            /* API Block styling: dark chocolate with terra cotta borders */
             .swagger-ui .opblock {
-                background: #000 !important;
-                border: 2px solid #00ff00 !important;
-                box-shadow: 4px 4px 0 #005500 !important;
+                background: #562B22 !important;
+                border: 2px solid #CBB682 !important;
+                box-shadow: 4px 4px 0 #986441 !important;
                 margin-bottom: 25px !important;
-                border-radius: 0 !important;
             }
-            .swagger-ui .opblock .opblock-summary { border-bottom: 1px dashed #00ff00 !important; padding: 10px !important; }
-            .swagger-ui .opblock .opblock-summary-path { color: #fff !important; }
-            .swagger-ui .opblock .opblock-summary-description { color: #00ff00 !important; }
+            .swagger-ui .opblock .opblock-summary { border-bottom: 1px dashed #CBB682 !important; padding: 10px !important; }
+            .swagger-ui .opblock .opblock-summary-path { color: #CBB682 !important; }
+            .swagger-ui .opblock .opblock-summary-description { color: #B48259 !important; }
 
-            /* Nút phương thức HTTP Neon Retro */
+            /* HTTP Method buttons: Caramel */
             .swagger-ui .opblock .opblock-summary-method {
-                background: #ff00ff !important;
-                color: #fff !important;
-                border: 2px solid #fff !important;
-                border-radius: 0 !important;
+                background: #C27A44 !important;
+                color: #3B231D !important;
+                border: 2px solid #CBB682 !important;
+                box-shadow: 2px 2px 0 #986441 !important;
                 text-transform: uppercase;
+                min-width: 80px;
+                text-align: center;
             }
 
-            /* Bảng thông số và form */
-            .swagger-ui table thead tr td, .swagger-ui table thead tr th { color: #ffd700 !important; border-bottom: 1px solid #00ff00; }
-            .swagger-ui .parameter__name, .swagger-ui .parameter__type { color: #00ffff !important; }
+            /* Tables and Inputs */
+            .swagger-ui table thead tr td, .swagger-ui table thead tr th { color: #CBB682 !important; border-bottom: 1px solid #CBB682; }
+            .swagger-ui .parameter__name, .swagger-ui .parameter__type { color: #C27A44 !important; }
             
-            /* Input form */
             .swagger-ui input, .swagger-ui textarea, .swagger-ui select {
-                background: #111 !important;
-                border: 2px solid #fff !important;
-                color: #00ff00 !important;
-                border-radius: 0 !important;
+                background: #3B231D !important;
+                border: 2px solid #CBB682 !important;
+                color: #CBB682 !important;
             }
 
-            /* Nút bấm */
+            /* Action Buttons */
             .swagger-ui .btn {
-                background: #000 !important;
-                color: #ff00ff !important;
-                border: 2px solid #ff00ff !important;
-                border-radius: 0 !important;
+                background: #986441 !important;
+                color: #3B231D !important;
+                border: 2px solid #3B231D !important;
+                box-shadow: 2px 2px 0 #562B22 !important;
             }
-            .swagger-ui .btn:hover { background: #ff00ff !important; color: #000 !important; }
+            .swagger-ui .btn:hover { background: #CBB682 !important; color: #3B231D !important; }
 
-            /* Ẩn Header lãng xẹt default */
             .swagger-ui .topbar { display: none; }
         `,
         customJs: [
