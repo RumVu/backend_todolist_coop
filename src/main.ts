@@ -2,6 +2,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
+import { setupSwagger } from './config/swagger.config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -17,6 +18,15 @@ async function bootstrap() {
       forbidNonWhitelisted: true,
     }),
   );
+
+  // Swagger (always enabled for now)
+  try {
+    setupSwagger(app);
+  } catch (err) {
+    // swallow; swagger is optional
+    // eslint-disable-next-line no-console
+    console.warn('Failed to setup Swagger:', err?.message ?? err);
+  }
 
   const port = configService.get<number>('app.port') ?? 6969;
   await app.listen(port);

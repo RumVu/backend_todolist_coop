@@ -11,6 +11,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RegisterDto = void 0;
 const class_validator_1 = require("class-validator");
+const swagger_1 = require("@nestjs/swagger");
 class RegisterDto {
     email;
     name;
@@ -26,18 +27,21 @@ __decorate([
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.MinLength)(5),
     (0, class_validator_1.MaxLength)(25),
+    (0, swagger_1.ApiProperty)({ example: 'user@example.com' }),
     __metadata("design:type", String)
 ], RegisterDto.prototype, "email", void 0);
 __decorate([
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.MinLength)(5),
     (0, class_validator_1.MaxLength)(80),
+    (0, swagger_1.ApiProperty)({ example: 'Jane Doe' }),
     __metadata("design:type", String)
 ], RegisterDto.prototype, "name", void 0);
 __decorate([
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.MinLength)(10),
     (0, class_validator_1.MaxLength)(20),
+    (0, swagger_1.ApiProperty)({ required: false, example: '+84123456789' }),
     __metadata("design:type", String)
 ], RegisterDto.prototype, "phoneNum", void 0);
 __decorate([
@@ -45,6 +49,7 @@ __decorate([
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.MinLength)(3),
     (0, class_validator_1.MaxLength)(25),
+    (0, swagger_1.ApiProperty)({ example: 'janedoe' }),
     __metadata("design:type", String)
 ], RegisterDto.prototype, "username", void 0);
 __decorate([
@@ -52,6 +57,7 @@ __decorate([
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.MinLength)(6),
     (0, class_validator_1.MaxLength)(35),
+    (0, swagger_1.ApiProperty)({ example: 's3cr3tPa$$' }),
     __metadata("design:type", String)
 ], RegisterDto.prototype, "password", void 0);
 __decorate([
@@ -59,6 +65,7 @@ __decorate([
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.MinLength)(6),
     (0, class_validator_1.MaxLength)(35),
+    (0, swagger_1.ApiProperty)({ example: 's3cr3tPa$$' }),
     __metadata("design:type", String)
 ], RegisterDto.prototype, "confirmPassword", void 0);
 //# sourceMappingURL=register.dto.js.map

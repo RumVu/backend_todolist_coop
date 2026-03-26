@@ -15,6 +15,8 @@ const common_1 = require("@nestjs/common");
 const config_1 = require("@nestjs/config");
 const jwt_1 = require("@nestjs/jwt");
 const auth_repository_1 = require("./auth.repository");
+const auth_mapper_1 = require("./auth.mapper");
+const hash_util_1 = require("../../common/utils/hash.util");
 let AuthService = class AuthService {
     authRepository;
     jwtService;
@@ -23,12 +25,6 @@ let AuthService = class AuthService {
         this.authRepository = authRepository;
         this.jwtService = jwtService;
         this.configService = configService;
-    }
-    hashPassword(password) {
-        return (0, crypto_1.createHash)('sha256').update(password).digest('hex');
-    }
-    hashValue(value) {
-        return (0, crypto_1.createHash)("sha256").update(value).digest("hex");
     }
     async register(registerDto) {
         const normalizedEmail = registerDto.email.trim().toLowerCase();
@@ -54,6 +50,7 @@ let AuthService = class AuthService {
         if (registerDto.password !== registerDto.confirmPassword) {
             throw new common_1.BadRequestException('Password confirmation does not match');
         }
+        const rounds = parseInt(this.configService.get('auth.bcryptSaltRounds', '10') || '10', 10);
         const userAccount = this.authRepository.createAccount({
             id: (0, crypto_1.randomUUID)(),
             email: normalizedEmail,
@@ -61,14 +58,13 @@ let AuthService = class AuthService {
             username: normalizedUsername,
             phoneNum: registerDto.phoneNum,
             isActive: true,
-            passwordHash: this.hashPassword(registerDto.password),
-            passwordSalt: ''
+            passwordHash: await (0, hash_util_1.hashPassword)(registerDto.password, rounds),
         });
         const tokens = await this.generateTokens(userAccount);
         return {
             message: "User registered successfully",
             data: {
-                userAccount: this.toProfileAccount(userAccount),
+                userAccount: (0, auth_mapper_1.toProfileAccount)(userAccount),
             },
             tokens
         };
@@ -82,15 +78,15 @@ let AuthService = class AuthService {
         if (!user.isActive) {
             throw new common_1.UnauthorizedException('User account is inactive');
         }
-        const passwordHash = this.hashPassword(loginDto.password);
-        if (user.passwordHash !== passwordHash) {
+        const passwordMatches = await (0, hash_util_1.comparePassword)(loginDto.password, user.passwordHash);
+        if (!passwordMatches) {
             throw new common_1.UnauthorizedException('Email or password is incorrect');
         }
         const tokens = await this.generateTokens(user);
         return {
             message: 'Login successfully',
             data: {
-                userAccount: this.toProfileAccount(user),
+                userAccount: (0, auth_mapper_1.toProfileAccount)(user),
             },
             tokens,
         };
@@ -104,7 +100,7 @@ let AuthService = class AuthService {
                 data: null
             };
         }
-        if (storedRefreshToken.tokenHash !== this.hashValue(payload.refreshToken)) {
+        if (storedRefreshToken.tokenHash !== (0, hash_util_1.hashValue)(payload.refreshToken)) {
             this.authRepository.deleteRefreshToken(refreshPayload.tokenId);
             throw new common_1.UnauthorizedException("Refresh token is invalid");
         }
@@ -138,8 +134,7 @@ let AuthService = class AuthService {
             email: user.email,
             username: user.username,
             name: user.name,
-            iat: Math.floor(Date.now() / 1000),
-            exp: Math.floor(Date.now() / 1000) + 15 * 60,
+            roles: user.roles ?? ['user'],
             tokenID,
             type: "access"
         };
@@ -147,8 +142,6 @@ let AuthService = class AuthService {
             sub: user.id,
             email: user.email,
             name: user.name,
-            iat: Math.floor(Date.now() / 1000),
-            exp: Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60,
             tokenId: tokenID,
             type: "refresh"
         };
@@ -162,6 +155,9 @@ let AuthService = class AuthService {
                 expiresIn: parseInt(this.configService.get("auth.refreshExpiresIn", "7") || "7", 10) * 24 * 60 * 60
             })
         ]);
+        const expiresAt = await this.calculateExpirationDate(refreshToken);
+        await this.revokeRefreshToken(user.id);
+        this.authRepository.saveRefreshToken((0, auth_mapper_1.buildRefreshTokenSave)(refreshToken, tokenID, user.id, expiresAt));
         return { accessToken, refreshToken };
     }
     async revokeRefreshToken(userID) {
@@ -210,7 +206,7 @@ let AuthService = class AuthService {
             this.authRepository.deleteRefreshToken(refreshPayload.tokenId);
             throw new common_1.UnauthorizedException("Refresh token has expired");
         }
-        if (storedRefreshToken.tokenHash !== this.hashValue(payload.refreshToken)) {
+        if (storedRefreshToken.tokenHash !== (0, hash_util_1.hashValue)(payload.refreshToken)) {
             this.authRepository.deleteRefreshToken(refreshPayload.tokenId);
             throw new common_1.UnauthorizedException("Refresh token is invalid");
         }
@@ -228,7 +224,7 @@ let AuthService = class AuthService {
         return {
             message: "Refresh token successfully",
             data: {
-                userAccount: this.toProfileAccount(user)
+                userAccount: (0, auth_mapper_1.toProfileAccount)(user)
             },
             tokens
         };
@@ -240,18 +236,7 @@ let AuthService = class AuthService {
         }
         return {
             message: "Current user fetched successfully",
-            data: this.toProfileAccount(user)
-        };
-    }
-    toProfileAccount(user) {
-        return {
-            id: user.id,
-            name: user.name,
-            username: user.username,
-            email: user.email,
-            isActive: user.isActive,
-            createAt: user.createdAt,
-            updateAt: user.updatedAt
+            data: (0, auth_mapper_1.toProfileAccount)(user)
         };
     }
 };

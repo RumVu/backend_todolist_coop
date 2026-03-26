@@ -1,4 +1,4 @@
-import { createHash, randomUUID } from "crypto";
+import { randomUUID } from "crypto";
 import {
   BadRequestException,
   Injectable,
@@ -9,11 +9,14 @@ import { JwtService } from "@nestjs/jwt";
 import { LoginDto } from "./dto/login.dto";
 import { RefreshTokenDto } from "./dto/refresh-token.dto";
 import { RegisterDto } from "./dto/register.dto";
-import { AuthRepository, AuthUserRecord } from "./auth.repository";
+import { AuthRepository } from "./auth.repository";
+import type { IAuthRepository, AuthUserRecord } from "./auth.repository";
+import { buildRefreshTokenSave, toProfileAccount } from './auth.mapper';
+import { hashPassword, comparePassword, hashValue } from '../../common/utils/hash.util';
 
 // AuthResponse is the structure of the response returned by the authentication service,
 // which includes a message, user data, and authentication tokens.
- export interface AuthResponse {
+export interface AuthResponse {
   message: string;
   data: {
     userAccount: {
@@ -22,8 +25,8 @@ import { AuthRepository, AuthUserRecord } from "./auth.repository";
       name: string;
       phoneNum?: string;
       isActive: boolean;
-      createAt: string;
-      updateAt: string;
+      createdAt: string;
+      updatedAt: string;
     }
   }
   tokens: AuthTokens;
@@ -42,8 +45,8 @@ interface RefreshTokenResponse {
   sub: string;
   email: string;
   name: string;
-  iat: number;
-  exp: number;
+  iat?: number;
+  exp?: number;
   tokenId: string;
   type: "refresh";
 }
@@ -54,8 +57,9 @@ interface AccessTokenResponse {
   email: string;
   username: string;
   name: string;
-  iat: number;
-  exp: number;
+  roles?: string[];
+  iat?: number;
+  exp?: number;
   tokenID: string;
   type: "access";
 }
@@ -68,12 +72,8 @@ export class AuthService {
     private readonly configService: ConfigService
   ) { }
 
-  private hashPassword(password: string): string {
-    return createHash('sha256').update(password).digest('hex');
-  }
-  private hashValue(value: string): string {
-    return createHash("sha256").update(value).digest("hex");
-  }
+  // Password and token hashing delegated to shared utils (bcrypt for passwords,
+  // sha256 for token hashing)
   // The register method handles user registration by validating the input, 
   // checking for existing users, creating a new user record, 
   // and generating authentication tokens.
@@ -108,6 +108,7 @@ export class AuthService {
     if (registerDto.password !== registerDto.confirmPassword) {
       throw new BadRequestException('Password confirmation does not match');
     }
+    const rounds = parseInt(this.configService.get<string>('auth.bcryptSaltRounds', '10') || '10', 10);
     const userAccount = this.authRepository.createAccount({
       id: randomUUID(),
       email: normalizedEmail,
@@ -115,15 +116,14 @@ export class AuthService {
       username: normalizedUsername,
       phoneNum: registerDto.phoneNum,
       isActive: true,
-      passwordHash: this.hashPassword(registerDto.password),
-      passwordSalt: ''
+      passwordHash: await hashPassword(registerDto.password, rounds),
     });
 
     const tokens = await this.generateTokens(userAccount);
     return {
       message: "User registered successfully",
       data: {
-        userAccount: this.toProfileAccount(userAccount),
+        userAccount: toProfileAccount(userAccount),
       },
       tokens
     };
@@ -132,33 +132,33 @@ export class AuthService {
   // The login method authenticates a user by validating the provided credentials, 
   // generating authentication tokens, and returning the user profile along with the tokens.
   async login(loginDto: LoginDto): Promise<AuthResponse> {
-  const normalizedEmail = loginDto.email.trim().toLowerCase();
-  const user = this.authRepository.findByEmail(normalizedEmail);
+    const normalizedEmail = loginDto.email.trim().toLowerCase();
+    const user = this.authRepository.findByEmail(normalizedEmail);
 
-  if (!user) {
-    throw new UnauthorizedException('Email or password is incorrect');
+    if (!user) {
+      throw new UnauthorizedException('Email or password is incorrect');
+    }
+
+    if (!user.isActive) {
+      throw new UnauthorizedException('User account is inactive');
+    }
+
+    const passwordMatches = await comparePassword(loginDto.password, user.passwordHash);
+
+    if (!passwordMatches) {
+      throw new UnauthorizedException('Email or password is incorrect');
+    }
+
+    const tokens = await this.generateTokens(user);
+
+    return {
+      message: 'Login successfully',
+      data: {
+        userAccount: toProfileAccount(user),
+      },
+      tokens,
+    };
   }
-
-  if (!user.isActive) {
-    throw new UnauthorizedException('User account is inactive');
-  }
-
-  const passwordHash = this.hashPassword(loginDto.password);
-
-  if (user.passwordHash !== passwordHash) {
-    throw new UnauthorizedException('Email or password is incorrect');
-  }
-
-  const tokens = await this.generateTokens(user);
-
-  return {
-    message: 'Login successfully',
-    data: {
-      userAccount: this.toProfileAccount(user),
-    },
-    tokens,
-  };
-}
 
 
   async logout(payload: RefreshTokenDto) {
@@ -172,7 +172,7 @@ export class AuthService {
       };
     }
 
-    if (storedRefreshToken.tokenHash !== this.hashValue(payload.refreshToken)) {
+    if (storedRefreshToken.tokenHash !== hashValue(payload.refreshToken)) {
       this.authRepository.deleteRefreshToken(refreshPayload.tokenId);
       throw new UnauthorizedException("Refresh token is invalid");
     }
@@ -209,8 +209,7 @@ export class AuthService {
       email: user.email,
       username: user.username,
       name: user.name,
-      iat: Math.floor(Date.now() / 1000),
-      exp: Math.floor(Date.now() / 1000) + 15 * 60, // Access token valid for 15 minutes
+      roles: user.roles ?? ['user'],
       tokenID,
       type: "access"
     };
@@ -218,8 +217,6 @@ export class AuthService {
       sub: user.id,
       email: user.email,
       name: user.name,
-      iat: Math.floor(Date.now() / 1000),
-      exp: Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60, // Refresh token valid for 7 days
       tokenId: tokenID,
       type: "refresh"
     };
@@ -233,6 +230,12 @@ export class AuthService {
         expiresIn: parseInt(this.configService.get<string>("auth.refreshExpiresIn", "7") || "7", 10) * 24 * 60 * 60
       })
     ]);
+    // Persist the refresh token (store hashed token + expiresAt)
+    const expiresAt = await this.calculateExpirationDate(refreshToken);
+    // Revoke existing refresh tokens for this user (single active token policy)
+    await this.revokeRefreshToken(user.id);
+    this.authRepository.saveRefreshToken(buildRefreshTokenSave(refreshToken, tokenID, user.id, expiresAt));
+
     return { accessToken, refreshToken };
   }
   // The revokeRefreshToken method is responsible for i
@@ -294,7 +297,7 @@ export class AuthService {
       throw new UnauthorizedException("Refresh token has expired");
     }
 
-    if (storedRefreshToken.tokenHash !== this.hashValue(payload.refreshToken)) {
+    if (storedRefreshToken.tokenHash !== hashValue(payload.refreshToken)) {
       this.authRepository.deleteRefreshToken(refreshPayload.tokenId);
       throw new UnauthorizedException("Refresh token is invalid");
     }
@@ -318,7 +321,7 @@ export class AuthService {
     return {
       message: "Refresh token successfully",
       data: {
-        userAccount: this.toProfileAccount(user)
+        userAccount: toProfileAccount(user)
       },
       tokens
     };
@@ -333,21 +336,10 @@ export class AuthService {
 
     return {
       message: "Current user fetched successfully",
-      data: this.toProfileAccount(user)
+      data: toProfileAccount(user)
     };
   }
 
-  private toProfileAccount(user: AuthUserRecord) {
-    return {
-      id: user.id,
-      name: user.name,
-      username: user.username,
-      email: user.email,
-      isActive: user.isActive,
-      createAt: user.createdAt,
-      updateAt: user.updatedAt
-    };
-  }
 
 
 }

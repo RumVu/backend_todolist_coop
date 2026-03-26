@@ -23,7 +23,7 @@ let AuthRepository = class AuthRepository {
     findByUsername(username) {
         const normalizedUsername = username.trim().toLowerCase();
         for (const user of this.users.values()) {
-            if (user.name === normalizedUsername) {
+            if (user.username === normalizedUsername) {
                 return user;
             }
         }
@@ -76,7 +76,7 @@ let AuthRepository = class AuthRepository {
     saveRefreshToken(token) {
         const record = {
             ...token,
-            createAt: new Date().toISOString()
+            createdAt: new Date().toISOString()
         };
         this.refreshTokens.set(record.tokenId, record);
         return record;
@@ -85,7 +85,7 @@ let AuthRepository = class AuthRepository {
         return this.refreshTokens.get(tokenId) || null;
     }
     deleteRefreshTokenByUserId(userId) {
-        console.log(`Revoking refresh tokens for user ID: ${userId}`);
+        this.deleteRefreshTokensByUserId(userId);
     }
     findRefreshTokenById(tokenId) {
         return this.refreshTokens.get(tokenId) ?? null;

@@ -13,8 +13,8 @@ export interface AuthResponse {
             name: string;
             phoneNum?: string;
             isActive: boolean;
-            createAt: string;
-            updateAt: string;
+            createdAt: string;
+            updatedAt: string;
         };
     };
     tokens: AuthTokens;
@@ -28,8 +28,9 @@ interface AccessTokenResponse {
     email: string;
     username: string;
     name: string;
-    iat: number;
-    exp: number;
+    roles?: string[];
+    iat?: number;
+    exp?: number;
     tokenID: string;
     type: "access";
 }
@@ -38,8 +39,6 @@ export declare class AuthService {
     private readonly jwtService;
     private readonly configService;
     constructor(authRepository: AuthRepository, jwtService: JwtService, configService: ConfigService);
-    private hashPassword;
-    private hashValue;
     register(registerDto: RegisterDto): Promise<AuthResponse>;
     login(loginDto: LoginDto): Promise<AuthResponse>;
     logout(payload: RefreshTokenDto): Promise<{
@@ -55,15 +54,16 @@ export declare class AuthService {
     getCurrentUser(userId: string): {
         message: string;
         data: {
+            roles?: string[] | undefined;
+            isActive: boolean;
+            createdAt: string;
+            updatedAt: string;
+            phoneNum?: string | undefined;
             id: string;
             name: string;
             username: string;
             email: string;
-            isActive: boolean;
-            createAt: string;
-            updateAt: string;
         };
     };
-    private toProfileAccount;
 }
 export {};

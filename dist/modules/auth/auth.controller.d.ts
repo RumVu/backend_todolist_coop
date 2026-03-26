@@ -15,13 +15,15 @@ export declare class AuthController {
     me(userId: string): {
         message: string;
         data: {
+            roles?: string[] | undefined;
+            isActive: boolean;
+            createdAt: string;
+            updatedAt: string;
+            phoneNum?: string | undefined;
             id: string;
             name: string;
             username: string;
             email: string;
-            isActive: boolean;
-            createAt: string;
-            updateAt: string;
         };
     };
 }

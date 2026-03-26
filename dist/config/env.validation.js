@@ -43,6 +43,7 @@ exports.envValidationSchema = Joi.object({
     JWT_ACCESS_SECRET: Joi.string().min(16).default("access-secret-key-123"),
     JWT_REFRESH_SECRET: Joi.string().min(16).default("refresh-secret-key-123"),
     JWT_ACCESS_EXPIRES_IN: Joi.string().default("15m"),
-    JWT_REFRESH_EXPIRES_IN: Joi.string().default("7d")
+    JWT_REFRESH_EXPIRES_IN: Joi.string().default("7d"),
+    BCRYPT_SALT_ROUNDS: Joi.number().integer().min(4).max(20).default(10)
 });
 //# sourceMappingURL=env.validation.js.map

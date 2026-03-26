@@ -12,6 +12,7 @@ const jwt_1 = require("@nestjs/jwt");
 const config_1 = require("@nestjs/config");
 const jwt_auth_guard_1 = require("../../common/guards/jwt-auth.guard");
 const auth_controller_1 = require("./auth.controller");
+const oauth_controller_1 = require("./oauth.controller");
 const auth_repository_1 = require("./auth.repository");
 const auth_service_1 = require("./auth.service");
 let AuthModule = class AuthModule {
@@ -29,7 +30,7 @@ exports.AuthModule = AuthModule = __decorate([
                 })
             })
         ],
-        controllers: [auth_controller_1.AuthController],
+        controllers: [auth_controller_1.AuthController, oauth_controller_1.OAuthController],
         providers: [auth_repository_1.AuthRepository, auth_service_1.AuthService, jwt_auth_guard_1.JwtAuthGuard],
         exports: [auth_service_1.AuthService, auth_repository_1.AuthRepository, jwt_auth_guard_1.JwtAuthGuard]
     })

@@ -32,6 +32,7 @@ let JwtAuthGuard = class JwtAuthGuard {
             userId: payload.sub,
             email: payload.email,
             name: payload.name,
+            ...(payload.hasOwnProperty('roles') ? { roles: payload.roles } : {}),
         };
         return true;
     }

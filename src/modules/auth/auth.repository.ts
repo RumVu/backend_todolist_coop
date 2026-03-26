@@ -8,9 +8,9 @@ export interface AuthUserRecord {
     email: string;
     phoneNum?: string;
     passwordHash: string;
-    passwordSalt: string;
     createdAt: string;
     updatedAt: string;
+    roles?: string[];
     isActive: boolean;
 }
 
@@ -19,11 +19,27 @@ export interface refreshTokenRecord {
     tokenId: string;
     tokenHash: string;
     expiresAt: string;
-    createAt: string;
+    createdAt: string;
+}
+
+export interface IAuthRepository {
+    findByEmail(email: string): AuthUserRecord | null;
+    findByUsername(username: string): AuthUserRecord | null;
+    findByName(name: string): AuthUserRecord | null;
+    findByPhoneNum(phoneNum: string): AuthUserRecord | null;
+    findById(id: string): AuthUserRecord | null;
+    createAccount(user: Omit<AuthUserRecord, 'createdAt' | 'updatedAt'>): AuthUserRecord;
+    updateUserAccount(userId: string, updates: Partial<Omit<AuthUserRecord, 'id' | 'createdAt'>>): AuthUserRecord | null;
+    saveRefreshToken(token: Omit<refreshTokenRecord, 'createdAt'>): refreshTokenRecord;
+    findRefreshToken(tokenId: string): refreshTokenRecord | null;
+    deleteRefreshTokenByUserId(userId: string): void;
+    findRefreshTokenById(tokenId: string): refreshTokenRecord | null;
+    deleteRefreshToken(tokenId: string): void;
+    deleteRefreshTokensByUserId(userId: string): void;
 }
 
 @Injectable()
-export class AuthRepository {
+export class AuthRepository implements IAuthRepository {
     private readonly users = new Map<string, AuthUserRecord>();
     private readonly refreshTokens = new Map<string, refreshTokenRecord>();
 
@@ -42,13 +58,13 @@ export class AuthRepository {
         const normalizedUsername = username.trim().toLowerCase();
 
         for (const user of this.users.values()) {
-            if (user.name === normalizedUsername) {
+            if (user.username === normalizedUsername) {
                 return user;
             }
         }
         return null;
     }
-    
+
     findByName(name: string): AuthUserRecord | null {
         const normalizedName = name.trim().toLowerCase();
 
@@ -110,7 +126,7 @@ export class AuthRepository {
     ): refreshTokenRecord {
         const record: refreshTokenRecord = {
             ...token,
-            createAt: new Date().toISOString()
+            createdAt: new Date().toISOString()
         };
 
         this.refreshTokens.set(record.tokenId, record);
@@ -123,7 +139,8 @@ export class AuthRepository {
     // In a real implementation, this would delete the refresh token from the database or in-memory store.
     // Since this is an in-memory repository, we can simply log the action or implement a token store if needed.
     deleteRefreshTokenByUserId(userId: string): void {
-        console.log(`Revoking refresh tokens for user ID: ${userId}`);
+        // Actually remove any refresh tokens associated with the user
+        this.deleteRefreshTokensByUserId(userId);
     }
     findRefreshTokenById(tokenId: string): refreshTokenRecord | null {
         return this.refreshTokens.get(tokenId) ?? null;
