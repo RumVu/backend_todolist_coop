@@ -89,5 +89,69 @@ export function setupSwagger(app: INestApplication) {
             'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.11.0/swagger-ui.min.css',
             'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.11.0/swagger-ui-standalone-preset.min.css',
         ],
+        customJsStr: `
+            setTimeout(() => {
+                const script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/mermaid@10.8.0/dist/mermaid.min.js';
+                document.head.appendChild(script);
+                
+                script.onload = () => {
+                    mermaid.initialize({ startOnLoad: false, theme: 'dark', fontFamily: '"Press Start 2P"' });
+                    
+                    fetch('/api/docs-json').then(res => res.json()).then(data => {
+                        let erd = "erDiagram\\n";
+                        const schemas = data.components?.schemas || {};
+                        const relations = [];
+
+                        for (const ObjectName in schemas) {
+                            const schema = schemas[ObjectName];
+                            const SafeName = ObjectName.replace(/[^a-zA-Z0-9]/g, '');
+                            erd += "  " + SafeName + " {\\n";
+                            if (schema.properties) {
+                                for (const PropName in schema.properties) {
+                                    const prop = schema.properties[PropName];
+                                    let type = prop.type;
+                                    
+                                    if (!type && prop.$ref) {
+                                        type = prop.$ref.split('/').pop().replace(/[^a-zA-Z0-9]/g, '');
+                                        relations.push({from: SafeName, to: type, name: PropName});
+                                    }
+                                    if (prop.type === 'array' && prop.items && prop.items.$ref) {
+                                        type = prop.items.$ref.split('/').pop().replace(/[^a-zA-Z0-9]/g, '') + "[]";
+                                        relations.push({from: SafeName, to: type.replace('[]',''), name: PropName});
+                                    }
+                                    
+                                    type = type || 'Any';
+                                    const SafePropName = PropName.replace(/[^a-zA-Z0-9]/g, '_');
+                                    erd += "    " + type + " " + SafePropName + "\\n";
+                                }
+                            }
+                            erd += "  }\\n";
+                        }
+
+                        relations.forEach(rel => {
+                            if (schemas[rel.to] || schemas[rel.to.replace(/Dto$/, '')]) {
+                                erd += "  " + rel.from + " ||--o{ " + rel.to + " : contains\\n";
+                            }
+                        });
+
+                        const container = document.createElement('div');
+                        container.style = "padding: 20px; background: #351C15; border: 2px solid #CBB682; box-shadow: 4px 4px 0 #986441; margin: 25px 0; overflow-x: auto;";
+                        container.innerHTML = '<h2 style="color: #CBB682; text-shadow: 2px 2px 0 #986441; text-align: center; margin-bottom: 20px;">SCHEMA ER DIAGRAM</h2><div id="mermaid-erd-container" style="text-align: center; color: #FFF;">Generating Diagram...</div>';
+                        
+                        const insertTarget = document.querySelector('.models') || document.querySelector('.swagger-ui');
+                        if (insertTarget && insertTarget.parentNode) {
+                            insertTarget.parentNode.insertBefore(container, insertTarget);
+                        }
+                        
+                        mermaid.render('erdSvgGraph', erd).then(result => {
+                            document.getElementById('mermaid-erd-container').innerHTML = result.svg;
+                        }).catch(e => {
+                            document.getElementById('mermaid-erd-container').innerHTML = "Schema Rendering Error: " + e.message;
+                        });
+                    }).catch(err => console.error("Could not load spec JSON for Mermaid:", err));
+                };
+            }, 1000);
+        `,
     });
 }
