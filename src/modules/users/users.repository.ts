@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { randomUUID } from 'crypto';
-import { Auth } from '../auth/entities/auth-session.entity';
 
 export interface UserRecord {
     id: string;
@@ -8,7 +7,7 @@ export interface UserRecord {
     username: string;
     email: string;
     phoneNum?: string;
-    passwordHash?: string;
+    passwordHash: string;
     createdAt: string;
     updatedAt: string;
     roles?: string[];
@@ -31,6 +30,22 @@ export class UsersRepository {
         const normalized = username.trim().toLowerCase();
         for (const u of this.users.values()) {
             if (u.username === normalized) return u;
+        }
+        return null;
+    }
+
+    findByName(name: string): UserRecord | null {
+        const normalized = name.trim().toLowerCase();
+        for (const u of this.users.values()) {
+            if (u.name.toLowerCase() === normalized) return u;
+        }
+        return null;
+    }
+
+    findByPhoneNum(phoneNum: string): UserRecord | null {
+        const normalized = phoneNum.trim();
+        for (const u of this.users.values()) {
+            if (u.phoneNum === normalized) return u;
         }
         return null;
     }

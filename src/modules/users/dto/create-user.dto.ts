@@ -30,4 +30,11 @@ export class CreateUserDto {
     @MaxLength(20)
     @ApiProperty({ example: '+84123456789', required: false })
     phoneNum?: string;
+
+    @IsOptional()
+    @IsString()
+    @MinLength(6)
+    @MaxLength(100)
+    @ApiProperty({ example: 'secret123', required: false, description: 'Optional password. If not provided, the system will generate a random 8-character password.' })
+    password?: string;
 }

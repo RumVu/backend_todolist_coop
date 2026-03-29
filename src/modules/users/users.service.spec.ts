@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UsersService } from './users.service';
 import { UsersRepository } from './users.repository';
+import { ConfigService } from '@nestjs/config';
 
 describe('UsersService', () => {
   let service: UsersService;
@@ -18,6 +19,9 @@ describe('UsersService', () => {
           delete: jest.fn(),
           findAll: jest.fn(),
         }
+      }, {
+        provide: ConfigService,
+        useValue: { get: jest.fn().mockReturnValue('10') }
       }],
     }).compile();
 
