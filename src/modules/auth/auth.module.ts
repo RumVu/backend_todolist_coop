@@ -6,9 +6,11 @@ import { AuthController } from "./auth.controller";
 import { OAuthController } from "./oauth.controller";
 import { AuthRepository } from "./auth.repository";
 import { AuthService } from "./auth.service";
+import { UsersModule } from "../users/users.module";
 @Module({
   imports: [
     ConfigModule,
+    UsersModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

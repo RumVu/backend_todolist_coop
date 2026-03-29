@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthService } from './auth.service';
 import { AuthRepository } from './auth.repository';
+import { UsersRepository } from '../users/users.repository';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 
@@ -12,6 +13,7 @@ describe('AuthService', () => {
       providers: [
         AuthService,
         AuthRepository,
+        UsersRepository,
         {
           provide: JwtService,
           useValue: {

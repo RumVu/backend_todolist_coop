@@ -1,11 +1,12 @@
-import { AuthUserRecord, refreshTokenRecord } from './auth.repository';
+import { refreshTokenRecord } from './auth.repository';
+import { UserRecord } from '../users/users.repository';
 import { hashValue } from '../../common/utils/hash.util';
 
 /**
  * Chuyển AuthUserRecord thành profile object dùng trong response.
  * Trả về các trường tương tự như `toProfileAccount` trong `AuthService`.
  */
-export function toProfileAccount(user: AuthUserRecord) {
+export function toProfileAccount(user: UserRecord) {
     return {
         id: user.id,
         name: user.name,

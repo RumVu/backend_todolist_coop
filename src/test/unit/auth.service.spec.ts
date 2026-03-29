@@ -1,21 +1,24 @@
 import { BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { AuthRepository } from '../../modules/auth/auth.repository';
+import { UsersRepository } from '../../modules/users/users.repository';
 import { AuthService } from '../../modules/auth/auth.service';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 
 describe('AuthService unit', () => {
   let authRepository: AuthRepository;
+  let usersRepository: UsersRepository;
   let authService: AuthService;
 
   beforeEach(() => {
     authRepository = new AuthRepository();
+    usersRepository = new UsersRepository();
     const jwtService = {
       signAsync: jest.fn().mockResolvedValue('token'),
       verifyAsync: jest.fn().mockResolvedValue({ exp: Math.floor(Date.now() / 1000) + 1000, tokenId: 'tid', type: 'refresh' }),
     } as unknown as JwtService;
     const configService = { getOrThrow: jest.fn().mockReturnValue('secret'), get: jest.fn().mockReturnValue('15') } as unknown as ConfigService;
-    authService = new AuthService(authRepository, jwtService, configService);
+    authService = new AuthService(authRepository, usersRepository, jwtService, configService);
   });
 
   it('normalizes email and returns an access token when registering', async () => {

@@ -8,6 +8,7 @@ export interface UserRecord {
     username: string;
     email: string;
     phoneNum?: string;
+    passwordHash?: string;
     createdAt: string;
     updatedAt: string;
     roles?: string[];
