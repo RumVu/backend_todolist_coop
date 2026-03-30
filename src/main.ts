@@ -38,9 +38,21 @@ async function bootstrap() {
     console.warn('Failed to setup Swagger:', err?.message ?? err);
   }
 
-  const port = configService.get<number>('app.port') ?? 6969;
+  if (process.env.VERCEL) {
+    await app.init();
+    return expressApp;
+  }
+
+  const port = configService.get<number>('app.port') ?? process.env.PORT ?? 6969;
   await app.listen(port);
   console.log(`Server is running on http://localhost:${port}/${apiPrefix}`);
 }
 
-void bootstrap();
+const bootstrapPromise = bootstrap();
+
+export default async function handler(req: any, res: any) {
+  const app = await bootstrapPromise;
+  if (app) {
+    return app(req, res);
+  }
+}
