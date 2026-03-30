@@ -3,6 +3,7 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { AuthRepository } from './auth.repository';
 import { UsersRepository } from '../users/users.repository';
+import { PrismaService } from '../../common/prisma/prisma.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -17,6 +18,7 @@ describe('AuthController', () => {
         AuthService,
         AuthRepository,
         UsersRepository,
+        { provide: PrismaService, useValue: {} },
         JwtAuthGuard,
         {
           provide: JwtService,

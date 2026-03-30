@@ -11,8 +11,17 @@ describe('AuthService unit', () => {
   let authService: AuthService;
 
   beforeEach(() => {
-    authRepository = new AuthRepository();
-    usersRepository = new UsersRepository();
+    const mockUsers: any[] = [];
+    authRepository = {
+      saveRefreshToken: jest.fn(),
+      deleteRefreshTokenByUserId: jest.fn(),
+      findRefreshTokenById: jest.fn()
+    } as any;
+    usersRepository = {
+      findByEmail: jest.fn(async (e) => mockUsers.find(u => u.email === e) || null),
+      findByUsername: jest.fn(async (u) => mockUsers.find(x => x.username === u) || null),
+      create: jest.fn(async (u) => { const user = { ...u, id: 'u1' }; mockUsers.push(user); return user; })
+    } as any;
     const jwtService = {
       signAsync: jest.fn().mockResolvedValue('token'),
       verifyAsync: jest.fn().mockResolvedValue({ exp: Math.floor(Date.now() / 1000) + 1000, tokenId: 'tid', type: 'refresh' }),

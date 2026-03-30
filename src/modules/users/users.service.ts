@@ -32,10 +32,10 @@ export class UsersService {
     const normalizedEmail = createUserDto.email.trim().toLowerCase();
     const normalizedUsername = createUserDto.username.trim().toLowerCase();
 
-    if (this.usersRepo.findByEmail(normalizedEmail)) {
+    if (await this.usersRepo.findByEmail(normalizedEmail)) {
       throw new BadRequestException('Email already in use');
     }
-    if (this.usersRepo.findByUsername(normalizedUsername)) {
+    if (await this.usersRepo.findByUsername(normalizedUsername)) {
       throw new BadRequestException('Username already in use');
     }
 
@@ -48,12 +48,11 @@ export class UsersService {
     const passwordHash = await hashPassword(plainPassword, rounds);
 
     // Ghi dữ liệu vào lưu trữ (Nguồn dữ liệu duy nhất đã được chuẩn hoá)
-    const user = this.usersRepo.create({
-      id: randomUUID(),
+    const user = await this.usersRepo.create({
       email: normalizedEmail,
       name: createUserDto.name.trim(),
       username: normalizedUsername,
-      phoneNum: createUserDto.phoneNum,
+      phoneNum: createUserDto.phoneNum || null,
       isActive: true, // Mặc định tài khoản luôn active khi tạo
       roles: ['user'], // Quyền mặc định
       passwordHash: passwordHash,
@@ -67,22 +66,22 @@ export class UsersService {
     return { message, data: toProfile(user) };
   }
 
-  findAll() {
-    const users = this.usersRepo.findAll();
+  async findAll() {
+    const users = await this.usersRepo.findAll();
     return { data: users.map(toProfile) };
   }
 
-  findOne(id: string) {
-    const user = this.usersRepo.findById(id);
+  async findOne(id: string) {
+    const user = await this.usersRepo.findById(id);
     if (!user) throw new NotFoundException('User not found');
     return { data: toProfile(user) };
   }
 
   async updateProfile(userId: string, updateProfileDto: UpdateProfileDto) {
-    const user = this.usersRepo.findById(userId);
+    const user = await this.usersRepo.findById(userId);
     if (!user) throw new NotFoundException('User not found');
 
-    const updated = this.usersRepo.update(userId, updateProfileDto);
+    const updated = await this.usersRepo.update(userId, updateProfileDto);
     return { message: 'Cập nhật hồ sơ cá nhân thành công', data: toProfile(updated) };
   }
 
@@ -91,7 +90,7 @@ export class UsersService {
       throw new BadRequestException('Mật khẩu xác nhận không khớp');
     }
 
-    const user = this.usersRepo.findById(userId);
+    const user = await this.usersRepo.findById(userId);
     if (!user) throw new NotFoundException('User not found');
 
     // Kiểm tra mật khẩu cũ
@@ -104,13 +103,13 @@ export class UsersService {
     const rounds = parseInt(this.configService.get<string>('auth.bcryptSaltRounds', '10') || '10', 10);
     const passwordHash = await hashPassword(changePasswordDto.newPassword, rounds);
 
-    this.usersRepo.update(userId, { passwordHash } as any);
+    await this.usersRepo.update(userId, { passwordHash } as any);
 
     return { message: 'Đổi mật khẩu thành công' };
   }
 
   async update(id: string, updateUserDto: UpdateUserDto) {
-    const user = this.usersRepo.findById(id);
+    const user = await this.usersRepo.findById(id);
     if (!user) throw new NotFoundException('User not found');
 
     const updateData: any = { ...updateUserDto };
@@ -118,7 +117,7 @@ export class UsersService {
     // Kiểm tra trùng lặp Email và Username nếu Admin có thay đổi
     if (updateData.email) {
       updateData.email = updateData.email.trim().toLowerCase();
-      const existing = this.usersRepo.findByEmail(updateData.email);
+      const existing = await this.usersRepo.findByEmail(updateData.email);
       if (existing && existing.id !== id) {
         throw new BadRequestException('Email đã được sử dụng bởi tài khoản khác');
       }
@@ -126,7 +125,7 @@ export class UsersService {
 
     if (updateData.username) {
       updateData.username = updateData.username.trim().toLowerCase();
-      const existing = this.usersRepo.findByUsername(updateData.username);
+      const existing = await this.usersRepo.findByUsername(updateData.username);
       if (existing && existing.id !== id) {
         throw new BadRequestException('Username đã được sử dụng bởi tài khoản khác');
       }
@@ -139,15 +138,15 @@ export class UsersService {
       delete updateData.password; // Không được phép lưu plaintext
     }
 
-    const updated = this.usersRepo.update(id, updateData);
+    const updated = await this.usersRepo.update(id, updateData);
     if (!updated) throw new NotFoundException('User not found');
     return { message: 'User updated', data: toProfile(updated) };
   }
 
-  remove(id: string) {
-    const user = this.usersRepo.findById(id);
+  async remove(id: string) {
+    const user = await this.usersRepo.findById(id);
     if (!user) throw new NotFoundException('User not found');
-    this.usersRepo.delete(id);
+    await this.usersRepo.delete(id);
     return { message: 'User removed' };
   }
 }

@@ -26,8 +26,8 @@ export interface AuthResponse {
       name: string;
       phoneNum?: string;
       isActive: boolean;
-      createdAt: string;
-      updatedAt: string;
+      createdAt: Date;
+      updatedAt: Date;
     }
   }
   tokens: AuthTokens;
@@ -97,12 +97,12 @@ export class AuthService {
       throw new BadRequestException
         ("Name must not be empty");
     }
-    const existingUserByEmail = this.usersRepository.findByEmail(normalizedEmail);
+    const existingUserByEmail = await this.usersRepository.findByEmail(normalizedEmail);
     if (existingUserByEmail) {
       throw new BadRequestException
         (`Email ${normalizedEmail} is already in use,please change to another email!`);
     }
-    const existingUserByUsername = this.usersRepository.findByUsername(normalizedUsername);
+    const existingUserByUsername = await this.usersRepository.findByUsername(normalizedUsername);
     if (existingUserByUsername) {
       throw new BadRequestException
         (`Username ${normalizedUsername} is already in use,please change to another username!`);
@@ -111,12 +111,11 @@ export class AuthService {
       throw new BadRequestException('Password confirmation does not match');
     }
     const rounds = parseInt(this.configService.get<string>('auth.bcryptSaltRounds', '10') || '10', 10);
-    const userAccount = this.usersRepository.create({
-      id: randomUUID(),
+    const userAccount = await this.usersRepository.create({
       email: normalizedEmail,
       name: normalizedName,
       username: normalizedUsername,
-      phoneNum: registerDto.phoneNum,
+      phoneNum: registerDto.phoneNum || null,
       isActive: true,
       roles: ['user'],
       passwordHash: await hashPassword(registerDto.password, rounds),
@@ -136,7 +135,7 @@ export class AuthService {
   // generating authentication tokens, and returning the user profile along with the tokens.
   async login(loginDto: LoginDto): Promise<AuthResponse> {
     const normalizedEmail = loginDto.email.trim().toLowerCase();
-    const user = this.usersRepository.findByEmail(normalizedEmail);
+    const user = await this.usersRepository.findByEmail(normalizedEmail);
 
     if (!user) {
       throw new UnauthorizedException('Email or password is incorrect');
@@ -166,7 +165,7 @@ export class AuthService {
 
   async logout(payload: RefreshTokenDto) {
     const refreshPayload = await this.verifyRefreshToken(payload.refreshToken);
-    const storedRefreshToken = this.authRepository.findRefreshTokenById(refreshPayload.tokenId);
+    const storedRefreshToken = await this.authRepository.findRefreshTokenById(refreshPayload.tokenId);
 
     if (!storedRefreshToken) {
       return {
@@ -176,11 +175,11 @@ export class AuthService {
     }
 
     if (storedRefreshToken.tokenHash !== hashValue(payload.refreshToken)) {
-      this.authRepository.deleteRefreshToken(refreshPayload.tokenId);
+      await this.authRepository.deleteRefreshToken(refreshPayload.tokenId);
       throw new UnauthorizedException("Refresh token is invalid");
     }
 
-    this.authRepository.deleteRefreshToken(refreshPayload.tokenId);
+    await this.authRepository.deleteRefreshToken(refreshPayload.tokenId);
 
     return {
       message: "Logout successfully",
@@ -237,7 +236,7 @@ export class AuthService {
     const expiresAt = await this.calculateExpirationDate(refreshToken);
     // Revoke existing refresh tokens for this user (single active token policy)
     await this.revokeRefreshToken(user.id);
-    this.authRepository.saveRefreshToken(buildRefreshTokenSave(refreshToken, tokenID, user.id, expiresAt));
+    await this.authRepository.saveRefreshToken(buildRefreshTokenSave(refreshToken, tokenID, user.id, expiresAt));
 
     return { accessToken, refreshToken };
   }
@@ -245,7 +244,7 @@ export class AuthService {
   // nvalidating the current refresh token by deleting it 
   // from the repository based on the user ID.
   private async revokeRefreshToken(userID: string): Promise<void> {
-    this.authRepository.deleteRefreshTokenByUserId(userID);
+    await this.authRepository.deleteRefreshTokenByUserId(userID);
   }
   // The calculateExpirationDate method decodes the refresh token 
   // to extract the expiration time (exp) and converts it to an ISO string format. 
@@ -285,7 +284,7 @@ export class AuthService {
   }
   async refreshTokens(payload: RefreshTokenDto): Promise<AuthResponse> {
     const refreshPayload = await this.verifyRefreshToken(payload.refreshToken);
-    const storedRefreshToken = this.authRepository.findRefreshTokenById(refreshPayload.tokenId);
+    const storedRefreshToken = await this.authRepository.findRefreshTokenById(refreshPayload.tokenId);
 
     if (!storedRefreshToken) {
       throw new UnauthorizedException("Refresh token is not recognized");
@@ -295,29 +294,29 @@ export class AuthService {
       throw new UnauthorizedException("Refresh token user mismatch");
     }
 
-    if (storedRefreshToken.expiresAt <= new Date().toISOString()) {
-      this.authRepository.deleteRefreshToken(refreshPayload.tokenId);
+    if (storedRefreshToken.expiresAt.getTime() <= Date.now()) {
+      await this.authRepository.deleteRefreshToken(refreshPayload.tokenId);
       throw new UnauthorizedException("Refresh token has expired");
     }
 
     if (storedRefreshToken.tokenHash !== hashValue(payload.refreshToken)) {
-      this.authRepository.deleteRefreshToken(refreshPayload.tokenId);
+      await this.authRepository.deleteRefreshToken(refreshPayload.tokenId);
       throw new UnauthorizedException("Refresh token is invalid");
     }
 
-    const user = this.usersRepository.findById(refreshPayload.sub);
+    const user = await this.usersRepository.findById(refreshPayload.sub);
 
     if (!user) {
-      this.authRepository.deleteRefreshToken(refreshPayload.tokenId);
+      await this.authRepository.deleteRefreshToken(refreshPayload.tokenId);
       throw new UnauthorizedException("User not found");
     }
 
     if (!user.isActive) {
-      this.authRepository.deleteRefreshToken(refreshPayload.tokenId);
+      await this.authRepository.deleteRefreshToken(refreshPayload.tokenId);
       throw new UnauthorizedException("User account is inactive");
     }
 
-    this.authRepository.deleteRefreshToken(refreshPayload.tokenId);
+    await this.authRepository.deleteRefreshToken(refreshPayload.tokenId);
 
     const tokens = await this.generateTokens(user);
 
@@ -330,8 +329,8 @@ export class AuthService {
     };
   }
 
-  getCurrentUser(userId: string) {
-    const user = this.usersRepository.findById(userId);
+  async getCurrentUser(userId: string) {
+    const user = await this.usersRepository.findById(userId);
 
     if (!user) {
       throw new UnauthorizedException("User not found");

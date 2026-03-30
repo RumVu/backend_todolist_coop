@@ -36,11 +36,11 @@ export function buildRefreshTokenSave(
     tokenId: string,
     userId: string,
     expiresAt: string,
-): Omit<refreshTokenRecord, 'createdAt'> {
+): Omit<refreshTokenRecord, 'id' | 'createdAt'> {
     return {
         userId,
         tokenId,
         tokenHash: hashValue(token),
-        expiresAt,
+        expiresAt: new Date(expiresAt),
     };
 }

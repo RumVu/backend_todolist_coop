@@ -1,60 +1,58 @@
 import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../../common/prisma/prisma.service';
+import { RefreshToken } from '@prisma/client';
 
-export interface refreshTokenRecord {
-    userId: string;
-    tokenId: string;
-    tokenHash: string;
-    expiresAt: string;
-    createdAt: string;
-}
+export type refreshTokenRecord = RefreshToken;
 
 export interface IAuthRepository {
-    saveRefreshToken(token: Omit<refreshTokenRecord, 'createdAt'>): refreshTokenRecord;
-    findRefreshToken(tokenId: string): refreshTokenRecord | null;
-    deleteRefreshTokenByUserId(userId: string): void;
-    findRefreshTokenById(tokenId: string): refreshTokenRecord | null;
-    deleteRefreshToken(tokenId: string): void;
-    deleteRefreshTokensByUserId(userId: string): void;
+    saveRefreshToken(token: Omit<refreshTokenRecord, 'id' | 'createdAt'>): Promise<refreshTokenRecord>;
+    findRefreshToken(tokenId: string): Promise<refreshTokenRecord | null>;
+    deleteRefreshTokenByUserId(userId: string): Promise<void>;
+    findRefreshTokenById(tokenId: string): Promise<refreshTokenRecord | null>;
+    deleteRefreshToken(tokenId: string): Promise<void>;
+    deleteRefreshTokensByUserId(userId: string): Promise<void>;
 }
 
 @Injectable()
 export class AuthRepository implements IAuthRepository {
-    private readonly refreshTokens = new Map<string, refreshTokenRecord>();
+    constructor(private readonly prisma: PrismaService) {}
 
-    saveRefreshToken(
-        token: Omit<refreshTokenRecord, "createdAt">
-    ): refreshTokenRecord {
-        const record: refreshTokenRecord = {
-            ...token,
-            createdAt: new Date().toISOString()
-        };
-
-        this.refreshTokens.set(record.tokenId, record);
-
-        return record;
+    async saveRefreshToken(
+        token: Omit<refreshTokenRecord, "id" | "createdAt">
+    ): Promise<refreshTokenRecord> {
+        return this.prisma.refreshToken.create({
+            data: token
+        });
     }
 
-    findRefreshToken(tokenId: string): refreshTokenRecord | null {
-        return this.refreshTokens.get(tokenId) || null;
+    async findRefreshToken(tokenId: string): Promise<refreshTokenRecord | null> {
+        return this.prisma.refreshToken.findFirst({
+            where: { tokenId }
+        });
     }
 
-    deleteRefreshTokenByUserId(userId: string): void {
-        this.deleteRefreshTokensByUserId(userId);
+    async deleteRefreshTokenByUserId(userId: string): Promise<void> {
+        await this.deleteRefreshTokensByUserId(userId);
     }
 
-    findRefreshTokenById(tokenId: string): refreshTokenRecord | null {
-        return this.refreshTokens.get(tokenId) ?? null;
+    async findRefreshTokenById(tokenId: string): Promise<refreshTokenRecord | null> {
+        return this.prisma.refreshToken.findFirst({
+            where: { tokenId }
+        });
     }
 
-    deleteRefreshToken(tokenId: string): void {
-        this.refreshTokens.delete(tokenId);
+    async deleteRefreshToken(tokenId: string): Promise<void> {
+        try {
+            // Prisma throws if not found during delete, so use deleteMany for safe deletion
+            await this.prisma.refreshToken.deleteMany({
+                where: { tokenId }
+            });
+        } catch {}
     }
 
-    deleteRefreshTokensByUserId(userId: string): void {
-        for (const [tokenId, token] of this.refreshTokens.entries()) {
-            if (token.userId === userId) {
-                this.refreshTokens.delete(tokenId);
-            }
-        }
+    async deleteRefreshTokensByUserId(userId: string): Promise<void> {
+        await this.prisma.refreshToken.deleteMany({
+            where: { userId }
+        });
     }
 }
