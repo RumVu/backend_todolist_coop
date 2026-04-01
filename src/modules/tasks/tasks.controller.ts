@@ -1,42 +1,74 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { TasksService } from './tasks.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
+import { AssignTaskDto } from './dto/assign-task.dto';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
+@ApiTags('Tasks')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 @Controller('tasks')
 export class TasksController {
   constructor(private readonly tasksService: TasksService) {}
 
   @Post()
-  create(@Body() createTaskDto: CreateTaskDto) {
-    return this.tasksService.create(createTaskDto);
+  @ApiOperation({ summary: 'Tạo công việc mới trong 1 Group' })
+  create(
+    @CurrentUser('userId') userId: string,
+    @Body() createTaskDto: CreateTaskDto
+  ) {
+    return this.tasksService.create(userId, createTaskDto);
   }
 
   @Get()
-  findAll() {
-    return this.tasksService.findAll();
+  @ApiOperation({ summary: 'Lấy toàn bộ công việc theo Group' })
+  @ApiQuery({ name: 'groupId', required: true, description: 'ID của Workspace/Group' })
+  findAllByGroup(
+    @CurrentUser('userId') userId: string,
+    @Query('groupId') groupId: string
+  ) {
+    return this.tasksService.findAllByGroup(userId, groupId);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.tasksService.findOne(+id);
+  @ApiOperation({ summary: 'Chi tiết một công việc' })
+  findOne(
+    @CurrentUser('userId') userId: string,
+    @Param('id') id: string
+  ) {
+    return this.tasksService.findOne(userId, id);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateTaskDto: UpdateTaskDto) {
-    return this.tasksService.update(+id, updateTaskDto);
+  @ApiOperation({ summary: 'Sửa nội dung/trạng thái công việc (Viewer không được sửa)' })
+  update(
+    @CurrentUser('userId') userId: string,
+    @Param('id') id: string,
+    @Body() updateTaskDto: UpdateTaskDto
+  ) {
+    return this.tasksService.update(userId, id, updateTaskDto);
+  }
+
+  @Patch(':id/assign')
+  @ApiOperation({ summary: 'Gán công việc cho người khác (hoặc chính mình)' })
+  assignTask(
+    @CurrentUser('userId') userId: string,
+    @Param('id') id: string,
+    @Body() assignTaskDto: AssignTaskDto
+  ) {
+    return this.tasksService.assignTask(userId, id, assignTaskDto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.tasksService.remove(+id);
+  @ApiOperation({ summary: 'Xoá công việc (Chỉ Admin/Owner/Creator)' })
+  remove(
+    @CurrentUser('userId') userId: string,
+    @Param('id') id: string
+  ) {
+    return this.tasksService.remove(userId, id);
   }
 }
+

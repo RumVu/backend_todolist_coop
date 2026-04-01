@@ -1,28 +1,22 @@
 import { Injectable } from '@nestjs/common';
-import { CreateReportDto } from './dto/create-report.dto';
-import { UpdateReportDto } from './dto/update-report.dto';
+import { PrismaService } from '../../common/prisma/prisma.service';
 
 @Injectable()
 export class ReportsService {
-  create(createReportDto: CreateReportDto) {
-    void createReportDto;
-    return 'This action adds a new report';
-  }
+  constructor(private readonly prisma: PrismaService) {}
 
-  findAll() {
-    return `This action returns all reports`;
-  }
+  async getDashboardStats() {
+    const totalUsers = await this.prisma.user.count();
+    const totalGroups = await this.prisma.taskGroup.count();
+    const totalTasks = await this.prisma.task.count();
+    const completedTasks = await this.prisma.task.count({ where: { status: 'DONE' } });
 
-  findOne(id: number) {
-    return `This action returns a #${id} report`;
-  }
-
-  update(id: number, updateReportDto: UpdateReportDto) {
-    void updateReportDto;
-    return `This action updates a #${id} report`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} report`;
+    return {
+      totalUsers,
+      totalGroups,
+      totalTasks,
+      completedTasks,
+      completionRate: totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0
+    };
   }
 }

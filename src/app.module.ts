@@ -8,6 +8,9 @@ import { HealthModule } from './health/health.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { PrismaModule } from './common/prisma/prisma.module';
+import { TasksGroupModule } from './modules/tasks_group/tasks_group.module';
+import { TasksModule } from './modules/tasks/tasks.module';
+import { WebsocketsModule } from './modules/websockets/websockets.module';
 
 @Module({
   imports: [
@@ -19,6 +22,9 @@ import { PrismaModule } from './common/prisma/prisma.module';
     HealthModule,
     AuthModule,
     UsersModule,
+    TasksGroupModule,
+    TasksModule,
+    WebsocketsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -4,7 +4,9 @@ import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
 import { setupSwagger } from './config/swagger.config';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
+import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
+import { TrimStringPipe } from './common/pipes/trim-string.pipe';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -19,6 +21,7 @@ async function bootstrap() {
   expressApp.get('/', (req: any, res: any) => res.redirect(`/${apiPrefix}/docs`));
 
   app.useGlobalPipes(
+    new TrimStringPipe(),
     new ValidationPipe({
       whitelist: true,
       transform: true,
@@ -26,7 +29,10 @@ async function bootstrap() {
     }),
   );
 
-  app.useGlobalInterceptors(new ResponseInterceptor());
+  app.useGlobalInterceptors(
+    new LoggingInterceptor(),
+    new ResponseInterceptor()
+  );
   app.useGlobalFilters(new HttpExceptionFilter());
 
   // Swagger (always enabled for now)

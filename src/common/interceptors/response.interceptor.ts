@@ -15,15 +15,6 @@ export class ResponseInterceptor implements NestInterceptor {
 
     return next.handle().pipe(
       map((res) => {
-        // Inject statusCode into the response payload automatically
-        if (typeof res === 'object' && res !== null) {
-          return {
-            statusCode: response.statusCode, // ví dụ: 200, 201
-            ...res,
-          };
-        }
-
-        // Fallback for simple string/primitive returns
         return {
           statusCode: response.statusCode,
           message: 'Success',
