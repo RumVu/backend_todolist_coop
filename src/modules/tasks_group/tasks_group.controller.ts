@@ -66,4 +66,25 @@ export class TasksGroupController {
   ) {
     return this.tasksGroupService.addMember(userId, id, addMemberDto);
   }
+
+  @Delete(':id/members/:memberId')
+  @ApiOperation({ summary: 'Kích thành viên khỏi dự án/nhóm (Chỉ Owner & Admin)' })
+  kickMember(
+    @CurrentUser('userId') userId: string,
+    @Param('id') id: string,
+    @Param('memberId') memberId: string
+  ) {
+    return this.tasksGroupService.kickMember(userId, id, memberId);
+  }
+
+  @Patch(':id/members/:memberId/role')
+  @ApiOperation({ summary: 'Phong chức/Giáng chức thành viên (Chỉ Owner)' })
+  updateMemberRole(
+    @CurrentUser('userId') userId: string,
+    @Param('id') id: string,
+    @Param('memberId') memberId: string,
+    @Body('role') role: string
+  ) {
+    return this.tasksGroupService.updateMemberRole(userId, id, memberId, role);
+  }
 }

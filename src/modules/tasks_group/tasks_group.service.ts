@@ -101,4 +101,56 @@ export class TasksGroupService {
     await this.tasksGroupRepo.addMember(groupId, targetUser.id, addMemberDto.role);
     return { message: `Đã bê ${targetUser.name} vào chung mâm!` };
   }
+
+  async kickMember(requesterId: string, groupId: string, targetUserId: string) {
+    const group = await this.tasksGroupRepo.findById(groupId);
+    if (!group) throw new NotFoundException('Không tìm thấy Group');
+
+    // Owner có quyền tối cao
+    const isOwner = group.ownerId === requesterId;
+    
+    // Tìm rank của ông requester
+    const requesterMember = group.members.find(m => m.userId === requesterId);
+    const isRequesterAdmin = requesterMember?.role === 'admin';
+
+    // Ai có thể bị kick?
+    const targetMember = group.members.find(m => m.userId === targetUserId);
+    if (!targetMember) throw new NotFoundException('Người này không có mặt trong mâm');
+
+    if (group.ownerId === targetUserId) {
+        throw new ForbiddenException('Không thể đá Owner ra khỏi Group do họ tạo!');
+    }
+
+    if (isRequesterAdmin && targetMember.role === 'admin') {
+        throw new ForbiddenException('Admin không thể đá cẳng một Admin khác, chỉ Owner mới được làm điều này');
+    }
+
+    if (!isOwner && !isRequesterAdmin) {
+        throw new ForbiddenException('Bạn không có quyền đuổi người, vui lòng nhờ Admin hoặc Owner');
+    }
+
+    await this.tasksGroupRepo.removeMember(groupId, targetUserId);
+    return { message: 'Đã sút thành công thành viên đục nước béo cò này' };
+  }
+
+  async updateMemberRole(requesterId: string, groupId: string, targetUserId: string, newRole: string) {
+    const group = await this.tasksGroupRepo.findById(groupId);
+    if (!group) throw new NotFoundException('Không tìm thấy Group');
+
+    const isOwner = group.ownerId === requesterId;
+
+    if (!isOwner) {
+        throw new ForbiddenException('Chỉ Owner quyền lực tuyệt đối mới được phong tước hoặc giáng chức người khác');
+    }
+
+    if (group.ownerId === targetUserId) {
+        throw new BadRequestException('Owner nghiễm nhiên có quyền siêu cao, khỏi cần set lại role');
+    }
+
+    const targetMember = await this.tasksGroupRepo.getMember(groupId, targetUserId);
+    if (!targetMember) throw new NotFoundException('Người này không nằm trong đội');
+
+    await this.tasksGroupRepo.updateMemberRole(groupId, targetUserId, newRole);
+    return { message: `Đã cập nhật tước vị thành ${newRole} thành công` };
+  }
 }

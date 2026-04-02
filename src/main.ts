@@ -1,6 +1,9 @@
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { ConfigService } from '@nestjs/config';
+import { join } from 'path';
 import { AppModule } from './app.module';
 import { setupSwagger } from './config/swagger.config';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
@@ -9,7 +12,20 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { TrimStringPipe } from './common/pipes/trim-string.pipe';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  // Setup Microservices Bridge (Redis Transporter)
+  app.connectMicroservice<MicroserviceOptions>({
+    transport: Transport.REDIS,
+    options: {
+      host: process.env.REDIS_HOST || 'localhost',
+      port: parseInt(process.env.REDIS_PORT || '6379'),
+    },
+  });
+
+  // Setup view/static assets for uploaded files
+  app.useStaticAssets(join(__dirname, '..', 'uploads'), {
+    prefix: '/uploads',
+  });
   const configService = app.get(ConfigService);
 
   const apiPrefix = configService.get<string>('app.apiPrefix') ?? 'api';
@@ -50,8 +66,11 @@ async function bootstrap() {
   }
 
   const port = configService.get<number>('app.port') ?? process.env.PORT ?? 6969;
+  // Khởi động cả REST API lẫn hệ thống Microservices lắng nghe song song
+  await app.startAllMicroservices();
   await app.listen(port);
-  console.log(`Server is running on http://localhost:${port}/${apiPrefix}`);
+  
+  Logger.log(`🚀 REST API chạy trên: http://localhost:${port}/${apiPrefix}`);
 }
 
 const bootstrapPromise = bootstrap();

@@ -1,7 +1,9 @@
-import { Controller, Get, Param, Delete } from '@nestjs/common';
+import { Controller, Get } from '@nestjs/common';
+import { SkipThrottle } from '@nestjs/throttler';
 import { ApiExcludeController, ApiOperation } from '@nestjs/swagger';
 import { HealthService } from './health.service';
 
+@SkipThrottle()
 @ApiExcludeController()
 @Controller('health')
 export class HealthController {

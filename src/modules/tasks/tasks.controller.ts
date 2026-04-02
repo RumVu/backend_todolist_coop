@@ -1,4 +1,5 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query } from '@nestjs/common';
+import { PaginationQueryDto } from '../../shared/dto/pagination-query.dto';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { TasksService } from './tasks.service';
 import { CreateTaskDto } from './dto/create-task.dto';
@@ -28,9 +29,10 @@ export class TasksController {
   @ApiQuery({ name: 'groupId', required: true, description: 'ID của Workspace/Group' })
   findAllByGroup(
     @CurrentUser('userId') userId: string,
-    @Query('groupId') groupId: string
+    @Query('groupId') groupId: string,
+    @Query() paginationQuery: PaginationQueryDto
   ) {
-    return this.tasksService.findAllByGroup(userId, groupId);
+    return this.tasksService.findAllByGroup(userId, groupId, paginationQuery);
   }
 
   @Get(':id')

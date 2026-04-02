@@ -1,0 +1,55 @@
+name: Backend CI Pipeline
+
+on:
+  push:
+    branches: [ "main", "dev" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build_and_test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [22.x]
+
+    steps:
+    - name: Checkout Source Code
+      uses: actions/checkout@v3
+
+    - name: Cài đặt Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+
+    - name: Cài đặt Dependencies
+      run: npm ci
+
+    - name: Lắp ráp Prisma Client
+      run: npx prisma generate
+
+    - name: Quét lỗi cú pháp (Lint)
+      run: npm run lint
+
+    - name: Biên dịch mã nguồn (Build)
+      run: npm run build
+
+    - name: Kiểm tra Unit Tests (Jest)
+      run: npm run test
+
+  docker:
+    needs: build_and_test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+    - name: Checkout Source Code
+      uses: actions/checkout@v3
+
+    - name: Build Docker Image
+      run: docker build -t backend-todolist-coop:latest .
+
+    # TODO: Push to DockerHub or AWS ECR in future
+    - name: Tag and Check Image
+      run: docker images

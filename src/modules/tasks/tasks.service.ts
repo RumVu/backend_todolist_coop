@@ -2,6 +2,8 @@ import { Injectable, NotFoundException, ForbiddenException, BadRequestException 
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { AssignTaskDto } from './dto/assign-task.dto';
+import { PaginationQueryDto } from '../../shared/dto/pagination-query.dto';
+import { getPaginationData } from '../../common/utils/pagination.util';
 import { TasksRepository } from './tasks.repository';
 import { TasksGroupRepository } from '../tasks_group/tasks_group.repository';
 import { UsersRepository } from '../users/users.repository';
@@ -71,11 +73,19 @@ export class TasksService {
     return { message: 'Tạo công việc thành công', data: task };
   }
 
-  async findAllByGroup(userId: string, groupId: string) {
+  async findAllByGroup(userId: string, groupId: string, query: PaginationQueryDto) {
     await this.checkGroupAccess(userId, groupId);
 
-    const tasks = await this.tasksRepo.findAllByGroupId(groupId);
-    return { message: 'Lấy danh sách công việc thành công', data: tasks };
+    const page = query.page || 1;
+    const limit = query.limit || 10;
+    
+    const [tasks, totalItems] = await this.tasksRepo.findAllByGroupId(groupId, query);
+    
+    return {
+      message: 'Lấy phương thức thành công',
+      data: tasks,
+      meta: getPaginationData(totalItems, page, limit)
+    };
   }
 
   async findOne(userId: string, id: string) {

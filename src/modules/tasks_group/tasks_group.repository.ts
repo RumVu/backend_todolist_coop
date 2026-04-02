@@ -63,4 +63,17 @@ export class TasksGroupRepository {
           where: { groupId_userId: { groupId, userId } }
       });
   }
+
+  async updateMemberRole(groupId: string, userId: string, role: string) {
+    return this.prisma.groupMember.update({
+      where: { groupId_userId: { groupId, userId } },
+      data: { role }
+    });
+  }
+
+  async removeMember(groupId: string, userId: string) {
+    return this.prisma.groupMember.delete({
+      where: { groupId_userId: { groupId, userId } }
+    });
+  }
 }
