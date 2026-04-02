@@ -75,11 +75,23 @@ async function bootstrap() {
   Logger.log(`🚀 REST API chạy trên: http://localhost:${port}/${apiPrefix}`);
 }
 
-const bootstrapPromise = bootstrap();
+const bootstrapPromise = bootstrap().catch(err => {
+  Logger.error('LỖI KHỞI ĐỘNG VERCEL SERVER:', err);
+  return err;
+});
 
 export default async function handler(req: any, res: any) {
-  const app = await bootstrapPromise;
-  if (app) {
-    return app(req, res);
+  const appOrError = await bootstrapPromise;
+  
+  if (appOrError instanceof Error) {
+    return res.status(500).json({ 
+      error: 'CRITICAL BOOTSTRAP FAILURE', 
+      message: appOrError.message,
+      stack: appOrError.stack 
+    });
+  }
+
+  if (appOrError) {
+    return appOrError(req, res);
   }
 }
