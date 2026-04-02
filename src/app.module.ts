@@ -28,14 +28,12 @@ import { MicroservicesModule } from './modules/microservices/microservices.modul
       ttl: 60000,
       limit: 100,
     }]),
-    ...(process.env.VERCEL ? [] : [
-      BullModule.forRoot({
-        redis: {
-          host: process.env.REDIS_HOST || 'localhost',
-          port: parseInt(process.env.REDIS_PORT || '6379'),
-        },
-      }),
-    ]),
+    BullModule.forRoot({
+      redis: {
+        host: process.env.REDIS_HOST || 'localhost',
+        port: parseInt(process.env.REDIS_PORT || '6379'),
+      },
+    }),
     PrismaModule,
     HealthModule,
     AuthModule,
@@ -44,7 +42,8 @@ import { MicroservicesModule } from './modules/microservices/microservices.modul
     TasksModule,
     WebsocketsModule,
     FilesModule,
-    ...(process.env.VERCEL ? [] : [NotificationsModule, MicroservicesModule]),
+    NotificationsModule,
+    MicroservicesModule,
   ],
   controllers: [AppController],
   providers: [

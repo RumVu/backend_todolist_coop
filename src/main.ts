@@ -13,16 +13,14 @@ import { TrimStringPipe } from './common/pipes/trim-string.pipe';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
-  // Setup Microservices Bridge (Redis Transporter) - Bỏ qua nếu chạy trên Vercel
-  if (!process.env.VERCEL) {
-    app.connectMicroservice<MicroserviceOptions>({
-      transport: Transport.REDIS,
-      options: {
-        host: process.env.REDIS_HOST || 'localhost',
-        port: parseInt(process.env.REDIS_PORT || '6379'),
-      },
-    });
-  }
+  // Setup Microservices Bridge (Redis Transporter)
+  app.connectMicroservice<MicroserviceOptions>({
+    transport: Transport.REDIS,
+    options: {
+      host: process.env.REDIS_HOST || 'localhost',
+      port: parseInt(process.env.REDIS_PORT || '6379'),
+    },
+  });
 
   // Setup view/static assets for uploaded files
   app.useStaticAssets(join(__dirname, '..', 'uploads'), {
@@ -75,23 +73,11 @@ async function bootstrap() {
   Logger.log(`🚀 REST API chạy trên: http://localhost:${port}/${apiPrefix}`);
 }
 
-const bootstrapPromise = bootstrap().catch(err => {
-  Logger.error('LỖI KHỞI ĐỘNG VERCEL SERVER:', err);
-  return err;
-});
+const bootstrapPromise = bootstrap();
 
 export default async function handler(req: any, res: any) {
-  const appOrError = await bootstrapPromise;
-  
-  if (appOrError instanceof Error) {
-    return res.status(500).json({ 
-      error: 'CRITICAL BOOTSTRAP FAILURE', 
-      message: appOrError.message,
-      stack: appOrError.stack 
-    });
-  }
-
-  if (appOrError) {
-    return appOrError(req, res);
+  const app = await bootstrapPromise;
+  if (app) {
+    return app(req, res);
   }
 }
