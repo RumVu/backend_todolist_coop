@@ -13,14 +13,16 @@ import { TrimStringPipe } from './common/pipes/trim-string.pipe';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
-  // Setup Microservices Bridge (Redis Transporter)
-  app.connectMicroservice<MicroserviceOptions>({
-    transport: Transport.REDIS,
-    options: {
-      host: process.env.REDIS_HOST || 'localhost',
-      port: parseInt(process.env.REDIS_PORT || '6379'),
-    },
-  });
+  // Setup Microservices Bridge (Redis Transporter) - Bỏ qua nếu chạy trên Vercel
+  if (!process.env.VERCEL) {
+    app.connectMicroservice<MicroserviceOptions>({
+      transport: Transport.REDIS,
+      options: {
+        host: process.env.REDIS_HOST || 'localhost',
+        port: parseInt(process.env.REDIS_PORT || '6379'),
+      },
+    });
+  }
 
   // Setup view/static assets for uploaded files
   app.useStaticAssets(join(__dirname, '..', 'uploads'), {
