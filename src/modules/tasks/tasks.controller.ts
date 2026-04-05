@@ -8,10 +8,7 @@ import {
   Delete,
   UseGuards,
   Query,
-  UseInterceptors,
 } from '@nestjs/common';
-import { CacheInterceptor } from '@nestjs/cache-manager';
-import { PaginationQueryDto } from '../../shared/dto/pagination-query.dto';
 import {
   ApiTags,
   ApiOperation,
@@ -22,6 +19,7 @@ import { TasksService } from './tasks.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { AssignTaskDto } from './dto/assign-task.dto';
+import { FindTasksQueryDto } from './dto/find-tasks-query.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
@@ -42,7 +40,6 @@ export class TasksController {
   }
 
   @Get()
-  @UseInterceptors(CacheInterceptor)
   @ApiOperation({ summary: 'Lấy toàn bộ công việc theo Group' })
   @ApiQuery({
     name: 'groupId',
@@ -51,10 +48,9 @@ export class TasksController {
   })
   findAllByGroup(
     @CurrentUser('userId') userId: string,
-    @Query('groupId') groupId: string,
-    @Query() paginationQuery: PaginationQueryDto,
+    @Query() query: FindTasksQueryDto,
   ) {
-    return this.tasksService.findAllByGroup(userId, groupId, paginationQuery);
+    return this.tasksService.findAllByGroup(userId, query.groupId, query);
   }
 
   @Get(':id')

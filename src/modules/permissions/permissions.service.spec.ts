@@ -5,7 +5,6 @@ import { ConflictException, NotFoundException } from '@nestjs/common';
 
 describe('PermissionsService', () => {
   let service: PermissionsService;
-  let prisma: PrismaService;
 
   const mockPrisma = {
     permission: {
@@ -29,7 +28,6 @@ describe('PermissionsService', () => {
     }).compile();
 
     service = module.get<PermissionsService>(PermissionsService);
-    prisma = module.get<PrismaService>(PrismaService);
   });
 
   it('should be defined', () => {
@@ -38,13 +36,21 @@ describe('PermissionsService', () => {
 
   describe('create', () => {
     it('should throw ConflictException if permission exists', async () => {
-      mockPrisma.permission.findUnique.mockResolvedValue({ id: '1', name: 'read' });
-      await expect(service.create({ name: 'read' })).rejects.toThrow(ConflictException);
+      mockPrisma.permission.findUnique.mockResolvedValue({
+        id: '1',
+        name: 'read',
+      });
+      await expect(service.create({ name: 'read' })).rejects.toThrow(
+        ConflictException,
+      );
     });
 
     it('should create a permission', async () => {
       mockPrisma.permission.findUnique.mockResolvedValue(null);
-      mockPrisma.permission.create.mockResolvedValue({ id: '1', name: 'write' });
+      mockPrisma.permission.create.mockResolvedValue({
+        id: '1',
+        name: 'write',
+      });
       const result = await service.create({ name: 'write' });
       expect(result).toEqual({ id: '1', name: 'write' });
     });

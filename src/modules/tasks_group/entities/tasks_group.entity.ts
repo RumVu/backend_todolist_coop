@@ -7,15 +7,28 @@ export class TasksGroup {
   @ApiProperty({ example: 'Work Tasks', description: 'Name of the task list' })
   name: string;
 
-  @ApiProperty({ example: 'Professional and team-related tasks', description: 'Optional description', required: false })
+  @ApiProperty({
+    example: 'Professional and team-related tasks',
+    description: 'Optional description',
+    required: false,
+  })
   description?: string;
 
-  @ApiProperty({ example: 'uuid-owner', description: 'The user who owns this group' })
+  @ApiProperty({
+    example: 'uuid-owner',
+    description: 'The user who owns this group',
+  })
   ownerId: string;
 
-  @ApiProperty({ example: '2023-01-01T00:00:00Z', description: 'Creation date' })
+  @ApiProperty({
+    example: '2023-01-01T00:00:00Z',
+    description: 'Creation date',
+  })
   createdAt: Date;
 
-  @ApiProperty({ example: '2023-01-01T00:00:00Z', description: 'Last update date' })
+  @ApiProperty({
+    example: '2023-01-01T00:00:00Z',
+    description: 'Last update date',
+  })
   updatedAt: Date;
 }

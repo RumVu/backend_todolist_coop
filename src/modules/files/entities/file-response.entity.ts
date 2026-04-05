@@ -1,7 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 export class FileResponse {
-  @ApiProperty({ example: 'Successfully uploaded', description: 'Status message' })
+  @ApiProperty({
+    example: 'Successfully uploaded',
+    description: 'Status message',
+  })
   message: string;
 
   @ApiProperty({

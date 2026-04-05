@@ -7,7 +7,6 @@ import { AdminGuard } from '../../common/guards/admin.guard';
 
 describe('RolesController', () => {
   let controller: RolesController;
-  let service: RolesService;
 
   const mockRolesService = {
     create: jest.fn((dto) => ({ id: '1', ...dto })),
@@ -34,7 +33,6 @@ describe('RolesController', () => {
       .compile();
 
     controller = module.get<RolesController>(RolesController);
-    service = module.get<RolesService>(RolesService);
   });
 
   it('should be defined', () => {
@@ -45,7 +43,7 @@ describe('RolesController', () => {
     it('should create a role', async () => {
       const dto = { name: 'user' };
       expect(await controller.create(dto)).toEqual({ id: '1', ...dto });
-      expect(service.create).toHaveBeenCalledWith(dto);
+      expect(mockRolesService.create).toHaveBeenCalledWith(dto);
     });
   });
 
@@ -58,7 +56,10 @@ describe('RolesController', () => {
   describe('update', () => {
     it('should update a role', async () => {
       const dto = { name: 'admin-updated' };
-      expect(await controller.update('1', dto)).toEqual({ id: '1', name: 'admin-updated' });
+      expect(await controller.update('1', dto)).toEqual({
+        id: '1',
+        name: 'admin-updated',
+      });
     });
   });
 });

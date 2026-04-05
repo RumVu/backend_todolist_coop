@@ -41,7 +41,11 @@ export class CreateTaskDto {
   @IsOptional()
   status?: TaskStatus;
 
-  @ApiProperty({ enum: TaskPriority, default: TaskPriority.MEDIUM, required: false })
+  @ApiProperty({
+    enum: TaskPriority,
+    default: TaskPriority.MEDIUM,
+    required: false,
+  })
   @IsEnum(TaskPriority)
   @IsOptional()
   priority?: TaskPriority;
@@ -51,12 +55,18 @@ export class CreateTaskDto {
   @IsOptional()
   dueDate?: string;
 
-  @ApiProperty({ description: 'The ID of the user assigned to this task', required: false })
+  @ApiProperty({
+    description: 'The ID of the user assigned to this task',
+    required: false,
+  })
   @IsUUID()
   @IsOptional()
   assigneeId?: string;
 
-  @ApiProperty({ description: 'The ID of the user who created this task', required: false })
+  @ApiProperty({
+    description: 'The ID of the user who created this task',
+    required: false,
+  })
   @IsUUID()
   @IsOptional()
   creatorId?: string;

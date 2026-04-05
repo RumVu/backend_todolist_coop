@@ -7,7 +7,10 @@ export class CreateReportDto {
   @IsNotEmpty()
   title: string;
 
-  @ApiProperty({ example: { totalTasks: 100, completedTasks: 80 }, description: 'Report raw data as JSON' })
+  @ApiProperty({
+    example: { totalTasks: 100, completedTasks: 80 },
+    description: 'Report raw data as JSON',
+  })
   @IsObject()
   @IsNotEmpty()
   data: any;

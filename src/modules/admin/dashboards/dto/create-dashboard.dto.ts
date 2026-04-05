@@ -7,7 +7,10 @@ export class CreateDashboardDto {
   @IsNotEmpty()
   title: string;
 
-  @ApiProperty({ example: { layout: 'grid', theme: 'dark' }, description: 'Dashboard configuration' })
+  @ApiProperty({
+    example: { layout: 'grid', theme: 'dark' },
+    description: 'Dashboard configuration',
+  })
   @IsObject()
   @IsOptional()
   config?: any;

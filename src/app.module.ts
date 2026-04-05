@@ -1,9 +1,6 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
-import { CacheModule } from '@nestjs/cache-manager';
-import { redisStore } from 'cache-manager-redis-yet';
-import { BullModule } from '@nestjs/bull';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import appConfig from './config/app.config';
@@ -32,30 +29,12 @@ import { SchedulesModule } from './modules/schedules/schedules.module';
       isGlobal: true,
       load: [appConfig, authConfig],
     }),
-    CacheModule.registerAsync({
-      isGlobal: true,
-      useFactory: async () => ({
-        store: await redisStore({
-          socket: {
-            host: process.env.REDIS_HOST || 'localhost',
-            port: parseInt(process.env.REDIS_PORT || '6379'),
-          },
-        }),
-        ttl: 60000,
-      }),
-    }),
     ThrottlerModule.forRoot([
       {
         ttl: 60000,
         limit: 100,
       },
     ]),
-    BullModule.forRoot({
-      redis: {
-        host: process.env.REDIS_HOST || 'localhost',
-        port: parseInt(process.env.REDIS_PORT || '6379'),
-      },
-    }),
     ScheduleModule.forRoot(),
     PrismaModule,
     HealthModule,

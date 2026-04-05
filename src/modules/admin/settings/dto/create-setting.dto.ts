@@ -2,7 +2,10 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
 
 export class CreateSettingDto {
-  @ApiProperty({ example: 'auth.bcryptSaltRounds', description: 'Unique setting key' })
+  @ApiProperty({
+    example: 'auth.bcryptSaltRounds',
+    description: 'Unique setting key',
+  })
   @IsString()
   @IsNotEmpty()
   key: string;
@@ -12,7 +15,10 @@ export class CreateSettingDto {
   @IsNotEmpty()
   value: string;
 
-  @ApiProperty({ example: 'Rounds for password hashing', description: 'Optional description' })
+  @ApiProperty({
+    example: 'Rounds for password hashing',
+    description: 'Optional description',
+  })
   @IsString()
   @IsOptional()
   description?: string;

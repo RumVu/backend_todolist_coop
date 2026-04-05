@@ -5,7 +5,6 @@ import { ConflictException, NotFoundException } from '@nestjs/common';
 
 describe('RolesService', () => {
   let service: RolesService;
-  let prisma: PrismaService;
 
   const mockPrisma = {
     role: {
@@ -29,7 +28,6 @@ describe('RolesService', () => {
     }).compile();
 
     service = module.get<RolesService>(RolesService);
-    prisma = module.get<PrismaService>(PrismaService);
   });
 
   afterEach(() => {

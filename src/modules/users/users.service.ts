@@ -131,29 +131,40 @@ export class UsersService {
     const user = await this.usersRepo.findById(id);
     if (!user) throw new NotFoundException('User not found');
 
-    const updateData: any = { ...updateUserDto };
-    if (updateData.email)
-      updateData.email = updateData.email.trim().toLowerCase();
-    if (updateData.username)
-      updateData.username = updateData.username.trim().toLowerCase();
+    const updateData: Prisma.UserUpdateInput = {};
 
-    if (updateData.password) {
+    if (updateUserDto.email) {
+      updateData.email = updateUserDto.email.trim().toLowerCase();
+    }
+    if (updateUserDto.username) {
+      updateData.username = updateUserDto.username.trim().toLowerCase();
+    }
+    if (updateUserDto.name) {
+      updateData.name = updateUserDto.name.trim();
+    }
+    if (updateUserDto.phoneNum !== undefined) {
+      updateData.phoneNum = updateUserDto.phoneNum || null;
+    }
+    if (typeof updateUserDto.isActive === 'boolean') {
+      updateData.isActive = updateUserDto.isActive;
+    }
+
+    if (updateUserDto.password) {
       const rounds = parseInt(
         this.configService.get<string>('auth.bcryptSaltRounds', '10') || '10',
         10,
       );
-      updateData.passwordHash = await hashPassword(updateData.password, rounds);
-      delete updateData.password;
+      updateData.passwordHash = await hashPassword(
+        updateUserDto.password,
+        rounds,
+      );
     }
 
-    if (updateData.roles) {
-      const rolesArray = Array.isArray(updateData.roles)
-        ? updateData.roles
-        : [];
+    if (updateUserDto.roles) {
       updateData.roles = {
         deleteMany: {},
-        create: rolesArray.map((rName: string) => ({
-          role: { connect: { name: rName } },
+        create: updateUserDto.roles.map((roleName) => ({
+          role: { connect: { name: roleName } },
         })),
       };
     }

@@ -6,7 +6,6 @@ import { NotFoundException } from '@nestjs/common';
 
 describe('Admin/TasksService', () => {
   let service: TasksService;
-  let prisma: PrismaService;
 
   const mockPrisma = {
     task: {
@@ -30,7 +29,6 @@ describe('Admin/TasksService', () => {
     }).compile();
 
     service = module.get<TasksService>(TasksService);
-    prisma = module.get<PrismaService>(PrismaService);
   });
 
   it('should be defined', () => {

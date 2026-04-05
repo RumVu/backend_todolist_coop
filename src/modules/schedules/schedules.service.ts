@@ -1,8 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { Prisma } from '../../../prisma/generated-client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { CreateScheduleDto } from './dto/create-schedule.dto';
+import { UpdateScheduleDto } from './dto/update-schedule.dto';
 
 @Injectable()
 export class SchedulesService {
@@ -71,18 +73,20 @@ export class SchedulesService {
     }
   }
 
-  async update(id: string, updateScheduleDto: any) {
+  async update(id: string, updateScheduleDto: UpdateScheduleDto) {
     const schedule = await this.prisma.schedule.findUnique({ where: { id } });
     if (!schedule) throw new NotFoundException('Schedule not found');
 
+    const updateData: Prisma.ScheduleUpdateInput = {
+      ...updateScheduleDto,
+      ...(updateScheduleDto.remindAt && {
+        remindAt: new Date(updateScheduleDto.remindAt),
+      }),
+    };
+
     return this.prisma.schedule.update({
       where: { id },
-      data: {
-        ...updateScheduleDto,
-        ...(updateScheduleDto.remindAt && {
-          remindAt: new Date(updateScheduleDto.remindAt),
-        }),
-      },
+      data: updateData,
     });
   }
 }

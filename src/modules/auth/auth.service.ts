@@ -73,6 +73,10 @@ export class AuthService {
     const normalizedUsername = registerDto.username.trim().toLowerCase();
     const normalizedName = registerDto.name.trim();
 
+    if (registerDto.password !== registerDto.confirmPassword) {
+      throw new BadRequestException('Password confirmation does not match');
+    }
+
     const existingUser =
       await this.usersRepository.findByEmail(normalizedEmail);
     if (existingUser) {

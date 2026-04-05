@@ -6,10 +6,9 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 
 describe('ReportsController', () => {
   let controller: ReportsController;
-  let service: ReportsService;
 
   const mockService = {
-    generateGroupSummary: jest.fn((gid, aid) => ({ id: 'R1', groupId: gid })),
+    generateGroupSummary: jest.fn((gid) => ({ id: 'R1', groupId: gid })),
     findAll: jest.fn(() => []),
     findOne: jest.fn((id) => ({ id, title: 'R' })),
     update: jest.fn((id, dto) => ({ id, ...dto })),
@@ -31,7 +30,6 @@ describe('ReportsController', () => {
       .compile();
 
     controller = module.get<ReportsController>(ReportsController);
-    service = module.get<ReportsService>(ReportsService);
   });
 
   it('should be defined', () => {
@@ -42,7 +40,7 @@ describe('ReportsController', () => {
     it('should generate report', async () => {
       const result = await controller.generateGroupSummary('G1', 'U1');
       expect(result.id).toBe('R1');
-      expect(service.generateGroupSummary).toHaveBeenCalledWith('G1', 'U1');
+      expect(mockService.generateGroupSummary).toHaveBeenCalledWith('G1', 'U1');
     });
   });
 });

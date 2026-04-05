@@ -4,6 +4,7 @@ import { TasksRepository } from './tasks.repository';
 import { TasksGroupRepository } from '../tasks_group/tasks_group.repository';
 import { UsersRepository } from '../users/users.repository';
 import { WebSocketsGateway } from '../websockets/websockets.gateway';
+import { NotificationsService } from '../notifications/notifications.service';
 
 describe('TasksService', () => {
   let service: TasksService;
@@ -16,6 +17,7 @@ describe('TasksService', () => {
         { provide: TasksGroupRepository, useValue: {} },
         { provide: UsersRepository, useValue: {} },
         { provide: WebSocketsGateway, useValue: {} },
+        { provide: NotificationsService, useValue: {} },
       ],
     }).compile();
 

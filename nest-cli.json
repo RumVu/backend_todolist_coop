@@ -5,7 +5,11 @@
   "compilerOptions": {
     "deleteOutDir": true,
     "assets": [
-      { "include": "../prisma/**/*", "outDir": "dist/prisma", "watchAssets": true }
+      {
+        "include": "../prisma/**/*",
+        "outDir": "dist/prisma",
+        "watchAssets": false
+      }
     ]
   }
 }

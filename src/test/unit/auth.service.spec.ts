@@ -4,6 +4,8 @@ import { UsersRepository } from '../../modules/users/users.repository';
 import { AuthService } from '../../modules/auth/auth.service';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { RegisterDto } from '../../modules/auth/dto/register.dto';
+import { LoginDto } from '../../modules/auth/dto/login.dto';
 
 describe('AuthService unit', () => {
   let authRepository: AuthRepository;
@@ -11,12 +13,25 @@ describe('AuthService unit', () => {
   let authService: AuthService;
 
   beforeEach(() => {
-    const mockUsers: any[] = [];
+    type MockUser = {
+      id: string;
+      name: string;
+      username: string;
+      email: string;
+      phoneNum: string | null;
+      isActive: boolean;
+      passwordHash: string;
+      createdAt: Date;
+      updatedAt: Date;
+      roles: Array<{ role: { name: string } }>;
+    };
+
+    const mockUsers: MockUser[] = [];
     authRepository = {
       saveRefreshToken: jest.fn(),
       deleteRefreshTokenByUserId: jest.fn(),
       findRefreshTokenById: jest.fn(),
-    } as any;
+    } as unknown as AuthRepository;
     usersRepository = {
       findByEmail: jest.fn(
         async (e) => mockUsers.find((u) => u.email === e) || null,
@@ -25,11 +40,21 @@ describe('AuthService unit', () => {
         async (u) => mockUsers.find((x) => x.username === u) || null,
       ),
       create: jest.fn(async (u) => {
-        const user = { ...u, id: 'u1' };
+        const user: MockUser = {
+          ...u,
+          id: 'u1',
+          phoneNum: u.phoneNum ?? null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          roles: [{ role: { name: 'user' } }],
+        };
         mockUsers.push(user);
         return user;
       }),
-    } as any;
+      findById: jest.fn(
+        async (id) => mockUsers.find((user) => user.id === id) || null,
+      ),
+    } as unknown as UsersRepository;
     const jwtService = {
       signAsync: jest.fn().mockResolvedValue('token'),
       verifyAsync: jest.fn().mockResolvedValue({
@@ -57,7 +82,7 @@ describe('AuthService unit', () => {
       username: 'user01',
       password: 'secret123',
       confirmPassword: 'secret123',
-    } as any);
+    } satisfies RegisterDto);
 
     expect(response.message).toBe('User registered successfully');
     expect(response.tokens.accessToken).toBeTruthy();
@@ -71,7 +96,7 @@ describe('AuthService unit', () => {
       username: 'user01',
       password: 'secret123',
       confirmPassword: 'secret123',
-    } as any);
+    } satisfies RegisterDto);
 
     await expect(
       authService.register({
@@ -80,7 +105,7 @@ describe('AuthService unit', () => {
         username: 'user02',
         password: 'secret123',
         confirmPassword: 'secret123',
-      } as any),
+      } satisfies RegisterDto),
     ).rejects.toThrow(BadRequestException);
   });
 
@@ -92,7 +117,7 @@ describe('AuthService unit', () => {
         username: 'user01',
         password: 'secret123',
         confirmPassword: 'secret456',
-      } as any),
+      } satisfies RegisterDto),
     ).rejects.toThrow(BadRequestException);
   });
 
@@ -101,7 +126,7 @@ describe('AuthService unit', () => {
       authService.login({
         email: 'missing@example.com',
         password: 'secret123',
-      } as any),
+      } satisfies LoginDto),
     ).rejects.toThrow(UnauthorizedException);
   });
 });

@@ -4,7 +4,10 @@ export class Task {
   @ApiProperty({ example: 'uuid-task-1234', description: 'Internal ID' })
   id: string;
 
-  @ApiProperty({ example: 'Complete Project Documentation', description: 'Task title' })
+  @ApiProperty({
+    example: 'Complete Project Documentation',
+    description: 'Task title',
+  })
   title: string;
 
   @ApiProperty({ example: 'TODO', description: 'Status' })
@@ -19,9 +22,16 @@ export class Task {
   @ApiProperty({ example: 'uuid-user', description: 'Creator ID' })
   creatorId: string;
 
-  @ApiProperty({ example: 'uuid-assignee', description: 'Assignee ID', required: false })
+  @ApiProperty({
+    example: 'uuid-assignee',
+    description: 'Assignee ID',
+    required: false,
+  })
   assigneeId?: string;
 
-  @ApiProperty({ example: '2023-01-01T00:00:00Z', description: 'Creation date' })
+  @ApiProperty({
+    example: '2023-01-01T00:00:00Z',
+    description: 'Creation date',
+  })
   createdAt: Date;
 }

@@ -4,6 +4,20 @@ import { Task, Prisma } from '../../../prisma/generated-client';
 import { PaginationQueryDto } from '../../shared/dto/pagination-query.dto';
 
 export type TaskRecord = Task;
+export type TaskWithGroupAccess = Prisma.TaskGetPayload<{
+  include: {
+    group: {
+      include: {
+        members: {
+          select: {
+            userId: true;
+            role: true;
+          };
+        };
+      };
+    };
+  };
+}>;
 
 @Injectable()
 export class TasksRepository {
@@ -44,7 +58,7 @@ export class TasksRepository {
     return [tasks, total];
   }
 
-  async findById(id: string): Promise<any | null> {
+  async findById(id: string): Promise<TaskWithGroupAccess | null> {
     return this.prisma.task.findUnique({
       where: { id },
       include: {

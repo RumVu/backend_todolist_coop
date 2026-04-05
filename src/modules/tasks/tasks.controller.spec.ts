@@ -1,7 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { TasksController } from './tasks.controller';
 import { TasksService } from './tasks.service';
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 
 describe('TasksController', () => {
@@ -10,10 +9,7 @@ describe('TasksController', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [TasksController],
-      providers: [
-        { provide: TasksService, useValue: {} },
-        { provide: CACHE_MANAGER, useValue: {} },
-      ],
+      providers: [{ provide: TasksService, useValue: {} }],
     })
       .overrideGuard(JwtAuthGuard)
       .useValue({ canActivate: () => true })

@@ -7,7 +7,6 @@ import { AdminGuard } from '../../../common/guards/admin.guard';
 
 describe('Admin/ReportsController', () => {
   let controller: ReportsController;
-  let service: ReportsService;
 
   const mockService = {
     findAll: jest.fn(() => []),
@@ -33,7 +32,6 @@ describe('Admin/ReportsController', () => {
       .compile();
 
     controller = module.get<ReportsController>(ReportsController);
-    service = module.get<ReportsService>(ReportsService);
   });
 
   it('should be defined', () => {
@@ -43,7 +41,7 @@ describe('Admin/ReportsController', () => {
   describe('findAll', () => {
     it('should return reports', async () => {
       expect(await controller.findAll()).toEqual([]);
-      expect(service.findAll).toHaveBeenCalled();
+      expect(mockService.findAll).toHaveBeenCalled();
     });
   });
 });

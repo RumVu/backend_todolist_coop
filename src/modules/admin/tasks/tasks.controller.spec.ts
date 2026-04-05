@@ -7,7 +7,6 @@ import { AdminGuard } from '../../../common/guards/admin.guard';
 
 describe('Admin/TasksController', () => {
   let controller: TasksController;
-  let service: TasksService;
 
   const mockService = {
     create: jest.fn((dto) => ({ id: '1', ...dto })),
@@ -34,7 +33,6 @@ describe('Admin/TasksController', () => {
       .compile();
 
     controller = module.get<TasksController>(TasksController);
-    service = module.get<TasksService>(TasksService);
   });
 
   it('should be defined', () => {
@@ -44,7 +42,7 @@ describe('Admin/TasksController', () => {
   describe('findAll', () => {
     it('should return tasks', async () => {
       expect(await controller.findAll({})).toEqual([]);
-      expect(service.findAll).toHaveBeenCalledWith({});
+      expect(mockService.findAll).toHaveBeenCalledWith({});
     });
   });
 });

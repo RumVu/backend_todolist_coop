@@ -7,12 +7,11 @@ import { AdminGuard } from '../../common/guards/admin.guard';
 
 describe('PermissionsController', () => {
   let controller: PermissionsController;
-  let service: PermissionsService;
 
   const mockService = {
-    create: jest.fn(dto => ({ id: '1', ...dto })),
+    create: jest.fn((dto) => ({ id: '1', ...dto })),
     findAll: jest.fn(() => [{ id: '1', name: 'read' }]),
-    remove: jest.fn(id => ({ id })),
+    remove: jest.fn((id) => ({ id })),
   };
 
   beforeEach(async () => {
@@ -32,7 +31,6 @@ describe('PermissionsController', () => {
       .compile();
 
     controller = module.get<PermissionsController>(PermissionsController);
-    service = module.get<PermissionsService>(PermissionsService);
   });
 
   it('should be defined', () => {

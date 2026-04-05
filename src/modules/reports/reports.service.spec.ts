@@ -5,7 +5,6 @@ import { NotFoundException } from '@nestjs/common';
 
 describe('ReportsService', () => {
   let service: ReportsService;
-  let prisma: PrismaService;
 
   const mockPrisma = {
     taskGroup: { findUnique: jest.fn() },
@@ -30,7 +29,6 @@ describe('ReportsService', () => {
     }).compile();
 
     service = module.get<ReportsService>(ReportsService);
-    prisma = module.get<PrismaService>(PrismaService);
   });
 
   it('should be defined', () => {
@@ -53,7 +51,10 @@ describe('ReportsService', () => {
         _count: { tasks: 0, members: 1 },
       };
       mockPrisma.taskGroup.findUnique.mockResolvedValue(group);
-      mockPrisma.report.create.mockResolvedValue({ id: 'R1', title: 'Summary' });
+      mockPrisma.report.create.mockResolvedValue({
+        id: 'R1',
+        title: 'Summary',
+      });
 
       const result = await service.generateGroupSummary('1', 'auth-1');
       expect(result.id).toBe('R1');

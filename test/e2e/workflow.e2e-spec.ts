@@ -1,67 +1,60 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { AppModule } from '../../src/app.module';
+import {
+  closeE2EPrisma,
+  cleanupUsersByEmail,
+  createE2EApp,
+  ensureBaseData,
+  getHttpServer,
+  uniqueEmail,
+  uniqueId,
+} from './e2e-helpers';
 
 describe('Workflow Integration (e2e)', () => {
   let app: INestApplication;
   let accessToken: string;
+  let email: string;
   let groupId: string;
-  let taskId: string;
 
   beforeAll(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
-
-    app = moduleFixture.createNestApplication();
-    app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
-    await app.init();
+    await ensureBaseData();
+    app = await createE2EApp();
+    email = uniqueEmail('workflow');
   });
 
   afterAll(async () => {
+    await cleanupUsersByEmail([email]);
     await app.close();
+    await closeE2EPrisma();
   });
 
-  const uniqueId = Date.now().toString().slice(-6);
-  const testUser = {
-    name: 'E2E Tester',
-    username: `e2e_${uniqueId}`,
-    email: `e2e${uniqueId}@ex.com`,
-    password: 'password123',
-    confirmPassword: 'password123',
-    phoneNum: '0123456789',
-  };
+  it('registers, creates a group, creates a task, and lists tasks in that group', async () => {
+    const registerPayload = {
+      name: 'Workflow Tester',
+      username: uniqueId('workflow-user'),
+      email,
+      password: 'password123',
+      confirmPassword: 'password123',
+      phoneNum: '0123456789',
+    };
 
-  it('/api/auth/register (POST) - Register User', async () => {
-    const response = await request(app.getHttpServer())
-      .post('/auth/register')
-      .send(testUser);
+    const registerResponse = await request(getHttpServer(app))
+      .post('/api/auth/register')
+      .send(registerPayload)
+      .expect(201);
 
-    if (response.status !== 201) {
-      console.log('REGISTER ERROR:', response.body);
-    }
-    expect(response.status).toBe(201);
-  });
+    expect(registerResponse.body.data.data.userAccount.email).toBe(email);
 
-  it('/api/auth/login (POST) - Login & Get Token', async () => {
-    const response = await request(app.getHttpServer())
-      .post('/auth/login')
-      .send({ email: testUser.email, password: testUser.password });
+    const loginResponse = await request(getHttpServer(app))
+      .post('/api/auth/login')
+      .send({ email, password: 'password123' })
+      .expect(201);
 
-    if (response.status !== 201) {
-      console.log('LOGIN ERROR:', response.body);
-    }
-    expect(response.status).toBe(201);
-
-    accessToken =
-      response.body.data.accessToken || response.body.data.tokens?.accessToken;
+    accessToken = loginResponse.body.data.tokens.accessToken as string;
     expect(accessToken).toBeDefined();
-  });
 
-  it('/api/tasks-group (POST) - Create Group', async () => {
-    const response = await request(app.getHttpServer())
-      .post('/tasks-group')
+    const groupResponse = await request(getHttpServer(app))
+      .post('/api/tasks-group')
       .set('Authorization', `Bearer ${accessToken}`)
       .send({
         name: 'E2E Test Group',
@@ -69,35 +62,29 @@ describe('Workflow Integration (e2e)', () => {
       })
       .expect(201);
 
-    groupId = response.body.data.id;
+    groupId = groupResponse.body.data.data.id as string;
     expect(groupId).toBeDefined();
-  });
 
-  it('/api/tasks (POST) - Create Task in Group', async () => {
-    const response = await request(app.getHttpServer())
-      .post('/tasks')
+    const taskResponse = await request(getHttpServer(app))
+      .post('/api/tasks')
       .set('Authorization', `Bearer ${accessToken}`)
       .send({
         title: 'Complete E2E Setup',
         description: 'The final step of enterprise update',
         priority: 'HIGH',
-        status: 'TODO',
-        groupId: groupId,
+        groupId,
       })
       .expect(201);
 
-    taskId = response.body.data.id;
-    expect(taskId).toBeDefined();
-  });
+    expect(taskResponse.body.data.data.title).toBe('Complete E2E Setup');
 
-  it('/api/tasks (GET) - Fetch Tasks with Cache', async () => {
-    const response = await request(app.getHttpServer())
-      .get(`/tasks?groupId=${groupId}`)
+    const listResponse = await request(getHttpServer(app))
+      .get(`/api/tasks?groupId=${groupId}`)
       .set('Authorization', `Bearer ${accessToken}`)
       .expect(200);
 
-    expect(response.body.data.data).toBeInstanceOf(Array);
-    expect(response.body.data.data.length).toBeGreaterThan(0);
-    expect(response.body.data.data[0].title).toBe('Complete E2E Setup');
-  });
+    expect(listResponse.body.data.data).toBeInstanceOf(Array);
+    expect(listResponse.body.data.data.length).toBeGreaterThan(0);
+    expect(listResponse.body.data.data[0].title).toBe('Complete E2E Setup');
+  }, 30000);
 });

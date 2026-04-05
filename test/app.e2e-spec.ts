@@ -1,24 +1,23 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { Application } from 'express';
-import { AppModule } from './../src/app.module';
+import { closeE2EPrisma, createE2EApp, getHttpServer } from './e2e/e2e-helpers';
 
 describe('AppController (e2e)', () => {
   let app: INestApplication;
-  let expressApp: Application;
 
-  beforeEach(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
-
-    app = moduleFixture.createNestApplication();
-    await app.init();
-    expressApp = app.getHttpAdapter().getInstance() as Application;
+  beforeAll(async () => {
+    app = await createE2EApp();
   });
 
-  it('/ (GET)', () => {
-    return request(expressApp).get('/').expect(200).expect('Hello World!');
+  afterAll(async () => {
+    await app.close();
+    await closeE2EPrisma();
+  });
+
+  it('/ (GET) redirects to Swagger docs', async () => {
+    await request(getHttpServer(app))
+      .get('/')
+      .expect(302)
+      .expect('Location', '/api/docs');
   });
 });

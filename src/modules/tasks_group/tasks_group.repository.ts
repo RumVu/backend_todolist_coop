@@ -1,8 +1,30 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { TaskGroup, Prisma } from '../../../prisma/generated-client';
+import {
+  GroupMember,
+  TaskGroup,
+  Prisma,
+} from '../../../prisma/generated-client';
 
 export type TaskGroupRecord = TaskGroup;
+export type TaskGroupWithMembers = Prisma.TaskGroupGetPayload<{
+  include: {
+    owner: {
+      select: {
+        id: true;
+        name: true;
+        email: true;
+      };
+    };
+    members: {
+      select: {
+        userId: true;
+        role: true;
+      };
+    };
+  };
+}>;
+export type GroupMemberRecord = GroupMember;
 
 @Injectable()
 export class TasksGroupRepository {
@@ -31,7 +53,7 @@ export class TasksGroupRepository {
     });
   }
 
-  async findById(id: string): Promise<any | null> {
+  async findById(id: string): Promise<TaskGroupWithMembers | null> {
     return this.prisma.taskGroup.findUnique({
       where: { id },
       include: {
@@ -58,7 +80,10 @@ export class TasksGroupRepository {
     await this.prisma.taskGroup.delete({ where: { id } });
   }
 
-  async getMember(groupId: string, userId: string): Promise<any | null> {
+  async getMember(
+    groupId: string,
+    userId: string,
+  ): Promise<GroupMemberRecord | null> {
     return this.prisma.groupMember.findUnique({
       where: { groupId_userId: { groupId, userId } },
     });

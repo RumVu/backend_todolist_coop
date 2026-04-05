@@ -8,8 +8,12 @@ import { UpdateTaskDto } from './dto/update-task.dto';
 import { AssignTaskDto } from './dto/assign-task.dto';
 import { PaginationQueryDto } from '../../shared/dto/pagination-query.dto';
 import { getPaginationData } from '../../common/utils/pagination.util';
+import { Prisma } from '../../../prisma/generated-client';
 import { TasksRepository } from './tasks.repository';
-import { TasksGroupRepository } from '../tasks_group/tasks_group.repository';
+import {
+  GroupMemberRecord,
+  TasksGroupRepository,
+} from '../tasks_group/tasks_group.repository';
 import { UsersRepository } from '../users/users.repository';
 import { WebSocketsGateway } from '../websockets/websockets.gateway';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -29,7 +33,9 @@ export class TasksService {
     if (!group) throw new NotFoundException('Group not found');
 
     const isOwner = group.ownerId === userId;
-    const memberObj = group.members.find((m: any) => m.userId === userId);
+    const memberObj = group.members.find(
+      (member: GroupMemberRecord) => member.userId === userId,
+    );
 
     if (!isOwner && !memberObj) {
       throw new ForbiddenException('Access denied');
@@ -48,7 +54,7 @@ export class TasksService {
       throw new ForbiddenException('Viewers cannot create tasks');
     }
 
-    const taskData = {
+    const taskData: Prisma.TaskCreateInput = {
       title: createTaskDto.title,
       description: createTaskDto.description,
       dueDate: createTaskDto.dueDate
@@ -62,7 +68,7 @@ export class TasksService {
         : {}),
     };
 
-    const task = await this.tasksRepo.create(taskData as any);
+    const task = await this.tasksRepo.create(taskData);
     this.wsGateway.server.to(createTaskDto.groupId).emit('taskCreated', task);
 
     // Notify assignee
@@ -115,8 +121,10 @@ export class TasksService {
       throw new ForbiddenException('Viewers cannot edit tasks');
     }
 
-    const updateData: any = { ...updateTaskDto };
-    if (updateData.dueDate) updateData.dueDate = new Date(updateData.dueDate);
+    const updateData: Prisma.TaskUpdateInput = { ...updateTaskDto };
+    if (updateTaskDto.dueDate) {
+      updateData.dueDate = new Date(updateTaskDto.dueDate);
+    }
 
     const updatedTask = await this.tasksRepo.update(id, updateData);
     this.wsGateway.server.to(task.groupId).emit('taskUpdated', updatedTask);
@@ -146,7 +154,7 @@ export class TasksService {
   ) {
     return this.update(userId, taskId, {
       assigneeId: assignTaskDto.assigneeId,
-    } as any);
+    });
   }
 
   async remove(userId: string, id: string) {

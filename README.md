@@ -1,101 +1,133 @@
-# 📊 Coop Backend - Enterprise TodoList & Management System
+# Coop Backend
 
-A high-performance, scalable backend built with **NestJS 11** and **Prisma**, designed for collaborative task management and administrative oversight. This project demonstrates a production-grade architecture featuring JWT authentication, Role-Based Access Control (RBAC), and background job processing.
+NestJS + Prisma backend cho hệ thống quản lý công việc cộng tác. Project tập trung vào các flow đủ mạnh để demo năng lực backend thực chiến: JWT auth, RBAC, quản lý user, workspace/task, validation, Swagger, unit tests và e2e tests với PostgreSQL thật.
 
----
+## What this project shows
 
-## 🛠️ Tech Stack & Infrastructure
+- Xây dựng API theo module với NestJS 11
+- Prisma + PostgreSQL cho dữ liệu nghiệp vụ
+- JWT access/refresh token flow
+- RBAC với `admin` và `user`
+- Workspace (`tasks-group`) + task CRUD flow
+- Swagger docs tại `/api/docs`
+- Unit test và e2e test để verify luồng chính
 
-- **Framework**: [NestJS](https://nestjs.com/) (V11) - Scalable Node.js architecture.
-- **Database**: [PostgreSQL](https://www.postgresql.org/) with [Prisma ORM](https://www.prisma.io/).
-- **Cache & Queue**: [Redis](https://redis.io/) + [BullMQ](https://github.com/OptimalBits/bull) for high-reliability background jobs.
-- **Security**: [Passport.js](https://www.passportjs.org/) + [JWT](https://jwt.io/) (Access / Rotation Refresh Tokens).
-- **Validation**: [class-validator](https://github.com/typestack/class-validator) + [class-transformer](https://github.com/typestack/class-transformer).
-- **Documentation**: [Swagger / OpenAPI](https://swagger.io/) via `@nestjs/swagger`.
-- **Infrastructure**: [Docker](https://www.docker.com/) & [Docker Compose].
+## Tech Stack
 
----
+- NestJS 11
+- Prisma ORM
+- PostgreSQL
+- JWT / Passport
+- class-validator / class-transformer
+- Swagger / OpenAPI
+- Jest / Supertest
 
-## ✨ Key Features
+Redis, Bull, WebSocket, Schedule modules vẫn có mặt trong codebase để mở rộng, nhưng luồng core hiện tại không còn phụ thuộc Redis để build và test local.
 
-### 🔐 Advanced Security & Auth
-- **JWT Authentication**: Secure login with short-lived access tokens and persistent refresh token rotation.
-- **RBAC (Role-Based Access Control)**: Granular permissions enforced via guards (`JwtAuthGuard`, `RolesGuard`, `AdminGuard`).
-- **User Groups**: Collaborative workspaces where members can be assigned specific roles (Owner, Member).
+## Quick Start
 
-### 📋 Task & Project Management
-- **Hierarchical Tasks**: Organize tasks within Groups/Projects.
-- **Priority & Status**: Real-time tracking of task states (TODO, IN_PROGRESS, DONE) and priorities (LOW to URGENT).
-- **Reminders & Schedules**: Background notification system powered by Redis and Bull.
+### 1. Start infrastructure
 
-### 🛡️ Administrative Control Plane
-Dedicated `/api/admin` namespace for system governance:
-- **Real-time Analytics**: Dashboard stats for global task completion rates and user activity.
-- **System Settings**: Hot-swappable global configuration (Maintenance mode, feature toggles).
-- **Moderation**: Full oversight of system-wide tasks, reports, and user accounts.
-
----
-
-## 🚀 Getting Started
-
-### 1. Prerequisites
-- Docker & Docker Compose
-- Node.js 20+
-
-### 2. Infrastructure Setup
-Spin up the database and Redis cache:
 ```bash
 docker compose up -d
 ```
 
-### 3. Application Setup
-```bash
-# Install dependencies
-npm install
+### 2. Install and prepare database
 
-# Generate Prisma Client & Run Migrations
+```bash
+npm install
+cp .env.example .env
 npx prisma generate
 npx prisma migrate dev
-
-# Seed Initial Data (Roles, Permissions, Admin User)
 npx prisma db seed
 ```
 
-### 4. Running the App
-```bash
-# Development mode
-npm run start:dev
+### 3. Run the server
 
-# Production build
-npm run build
-npm run start:prod
+```bash
+npm run start:dev
 ```
 
-### 5. API Documentation
-Once running, visit the interactive Swagger UI at:  
-👉 `http://localhost:6969/api/docs`
+Server mặc định:
 
----
+```text
+http://localhost:6969
+```
 
-## 🧪 Testing
+Swagger:
 
-The project maintains a healthy testing suite focused on core business logic:
-- **Unit Tests**: `npm run test`
-- **E2E Tests**: `npm run test:e2e`
+```text
+http://localhost:6969/api/docs
+```
 
----
+## Test & Verification
 
-## 📁 System Architecture Overview
+Các lệnh verify chính:
+
+```bash
+npm run build
+npm test -- --runInBand
+npm run test:e2e
+npm run lint
+```
+
+Tài liệu test case chi tiết:
+
+- [src/docs/testing/test-cases.md](/Users/rumvu/Documents/backend_todolist/backend_todolist_coop/src/docs/testing/test-cases.md)
+
+## GitHub Checklist
+
+Trước khi public repo:
+
+- dùng `.env.example` thay vì đẩy file `.env` thật
+- bảo đảm đã commit `package-lock.json`
+- không commit `node_modules/`, `dist/`, `coverage/`
+- thêm screenshots Swagger hoặc sequence test nếu muốn repo nổi bật hơn trên CV
+
+## Seeded Admin Account
+
+```text
+Email: admin@ex.com
+Password: admin123
+```
+
+## Main API Areas
+
+- `/api/auth`: register, login, refresh, logout, me
+- `/api/users`: admin CRUD + profile/password flows
+- `/api/tasks-group`: workspace/group management
+- `/api/tasks`: task CRUD, assignment, listing by group
+- `/api/admin/*`: admin-facing modules
+
+## Project Structure
 
 ```text
 src/
-├── common/           # Global guards, filters, decorators, Prisma service
-├── config/           # Centralized configuration (Auth, DB, Redis)
-├── modules/          # Domain-driven modules
-│   ├── auth/         # Login, Register, Token rotation logic
-│   ├── admin/        # Administrative sub-modules and dashboards
-│   ├── tasks/        # Core task CRUD and assignment logic
-│   ├── notifications/# Redis/Bull background job processing
-│   └── ...           # Roles, Permissions, Schedules, Files, etc.
-└── main.ts           # Bootstrapping with Swagger and Global Pipes
+├── app.module.ts
+├── app.setup.ts
+├── common/
+├── config/
+├── modules/
+│   ├── auth/
+│   ├── users/
+│   ├── tasks/
+│   ├── tasks_group/
+│   ├── admin/
+│   └── ...
+└── docs/
 ```
+
+## Verified Status
+
+Tại thời điểm cập nhật README này, project đã được verify với:
+
+- `npm run build`
+- `npm test -- --runInBand`
+- `npm run test:e2e`
+- `npm run lint`
+
+## Notes
+
+- File `.env` local đang trỏ tới PostgreSQL tại `localhost:6699`
+- Root path `/` redirect sang `/api/docs`
+- Response API dùng envelope chung: `statusCode`, `message`, `data`

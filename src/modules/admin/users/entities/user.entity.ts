@@ -16,6 +16,9 @@ export class User {
   @ApiProperty({ example: true, description: 'Whether the account is active' })
   isActive: boolean;
 
-  @ApiProperty({ example: '2023-01-01T00:00:00Z', description: 'Creation date' })
+  @ApiProperty({
+    example: '2023-01-01T00:00:00Z',
+    description: 'Creation date',
+  })
   createdAt: Date;
 }

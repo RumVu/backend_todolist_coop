@@ -13,6 +13,9 @@ export class Admin {
   @ApiProperty({ example: 'MANAGER', description: 'Administrative role level' })
   role: string;
 
-  @ApiProperty({ example: '2023-01-01T00:00:00Z', description: 'Creation date' })
+  @ApiProperty({
+    example: '2023-01-01T00:00:00Z',
+    description: 'Creation date',
+  })
   createdAt: Date;
 }

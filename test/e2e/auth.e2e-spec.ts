@@ -1,81 +1,78 @@
 import { INestApplication } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
-import { Application } from 'express';
-import { AppModule } from './../../src/app.module';
+import {
+  closeE2EPrisma,
+  cleanupUsersByEmail,
+  createE2EApp,
+  ensureBaseData,
+  getHttpServer,
+  uniqueEmail,
+  uniqueId,
+} from './e2e-helpers';
 
 describe('Auth e2e (full flow)', () => {
   let app: INestApplication;
-  let expressApp: Application;
+  let email: string;
 
   beforeAll(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
-
-    app = moduleFixture.createNestApplication();
-    await app.init();
-    expressApp = app.getHttpAdapter().getInstance() as Application;
+    await ensureBaseData();
+    app = await createE2EApp();
+    email = uniqueEmail('auth');
   });
 
   afterAll(async () => {
+    await cleanupUsersByEmail([email]);
     await app.close();
+    await closeE2EPrisma();
   });
 
   it('register -> login -> me -> refresh -> logout', async () => {
     const registerPayload = {
-      email: 'e2e-user@example.com',
+      email,
       name: 'E2E User',
-      username: 'e2euser',
+      username: uniqueId('user'),
       password: 'secret123',
       confirmPassword: 'secret123',
     };
 
-    const registerRes = await request(expressApp)
-      .post('/auth/register')
+    const registerRes = await request(getHttpServer(app))
+      .post('/api/auth/register')
       .send(registerPayload)
       .expect(201);
 
-    expect(registerRes.body.message).toBe('User registered successfully');
-    expect(registerRes.body.data.userAccount.email).toBe(
-      'e2e-user@example.com',
-    );
+    expect(registerRes.body.data.message).toBe('User registered successfully');
+    expect(registerRes.body.data.data.userAccount.email).toBe(email);
 
-    const loginRes = await request(expressApp)
-      .post('/auth/login')
-      .send({ email: 'e2e-user@example.com', password: 'secret123' })
+    const loginRes = await request(getHttpServer(app))
+      .post('/api/auth/login')
+      .send({ email, password: 'secret123' })
       .expect(201);
 
-    expect(loginRes.body.message).toBe('Login successfully');
-    const accessToken = loginRes.body.tokens.accessToken as string;
-    const refreshToken = loginRes.body.tokens.refreshToken as string;
+    expect(loginRes.body.data.message).toBe('Login successful');
+    const accessToken = loginRes.body.data.tokens.accessToken as string;
+    const refreshToken = loginRes.body.data.tokens.refreshToken as string;
 
-    // me
-    const meRes = await request(expressApp)
-      .get('/auth/me')
+    const meRes = await request(getHttpServer(app))
+      .get('/api/auth/me')
       .set('Authorization', `Bearer ${accessToken}`)
       .expect(200);
 
-    expect(meRes.body.message).toBe('Current user fetched successfully');
-    expect(meRes.body.data.email || meRes.body.data.userAccount?.email).toBe(
-      'e2e-user@example.com',
-    );
+    expect(meRes.body.data.message).toBe('User profile fetched');
+    expect(meRes.body.data.data.email).toBe(email);
 
-    // refresh
-    const refreshRes = await request(expressApp)
-      .post('/auth/refresh')
+    const refreshRes = await request(getHttpServer(app))
+      .post('/api/auth/refresh')
       .send({ refreshToken })
       .expect(201);
 
-    expect(refreshRes.body.message).toBe('Refresh token successfully');
-    expect(refreshRes.body.tokens.accessToken).toBeDefined();
+    expect(refreshRes.body.data.message).toBe('Token refreshed');
+    expect(refreshRes.body.data.tokens.accessToken).toBeDefined();
 
-    // logout
-    const logoutRes = await request(expressApp)
-      .post('/auth/logout')
-      .send({ refreshToken })
+    const logoutRes = await request(getHttpServer(app))
+      .post('/api/auth/logout')
+      .send({ refreshToken: refreshRes.body.data.tokens.refreshToken })
       .expect(201);
 
-    expect(logoutRes.body.message).toBe('Logout successfully');
+    expect(logoutRes.body.data.message).toBe('Logout successful');
   }, 20000);
 });
