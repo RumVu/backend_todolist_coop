@@ -8,7 +8,12 @@ import {
   Delete,
   UseGuards,
 } from '@nestjs/common';
-import { ApiOperation, ApiResponse, ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -22,18 +27,27 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 @ApiTags('Users')
 @ApiBearerAuth() // Hiện thị nút ổ khoá JWT góc phải Swagger
 @UseGuards(JwtAuthGuard, RolesGuard) // Bật cổng bảo vệ đa lớp: Yêu cầu Đăng nhập (Jwt) và có Quyền (Roles)
-@ApiResponse({ status: 401, description: 'Unauthorized (Missing or invalid access token)' })
-@ApiResponse({ status: 403, description: 'Forbidden (Tài khoản không đủ thẩm quyền Admin)' })
+@ApiResponse({
+  status: 401,
+  description: 'Unauthorized (Missing or invalid access token)',
+})
+@ApiResponse({
+  status: 403,
+  description: 'Forbidden (Tài khoản không đủ thẩm quyền Admin)',
+})
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) { }
+  constructor(private readonly usersService: UsersService) {}
 
   // API Độc quyền của Admin: Tạo tài khoản hệ thống (Có kèm Set mật khẩu auto)
   @Post()
   @Roles('admin') // Rào chắn chỉ cho Admin gọi API này
   @ApiOperation({ summary: 'Create a new user' })
   @ApiResponse({ status: 201, description: 'User created' })
-  @ApiResponse({ status: 400, description: 'Bad Request (Email or username already in use)' })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request (Email or username already in use)',
+  })
   create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
   }
@@ -73,7 +87,10 @@ export class UsersController {
   @Patch('me/password')
   @ApiOperation({ summary: 'Change current user password' })
   @ApiResponse({ status: 200, description: 'Password changed successfully' })
-  @ApiResponse({ status: 400, description: 'Bad Request (Mật khẩu cũ sai hoặc xác nhận không khớp)' })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request (Mật khẩu cũ sai hoặc xác nhận không khớp)',
+  })
   changePassword(
     @CurrentUser('userId') userId: string,
     @Body() changePasswordDto: ChangePasswordDto,

@@ -1,107 +1,101 @@
-# Backend TodoList
+# 📊 Coop Backend - Enterprise TodoList & Management System
 
-Backend API built with NestJS for a TodoList-style system. The codebase currently exposes a small working surface for authentication and health checks, while several other modules remain scaffolded for future implementation.
+A high-performance, scalable backend built with **NestJS 11** and **Prisma**, designed for collaborative task management and administrative oversight. This project demonstrates a production-grade architecture featuring JWT authentication, Role-Based Access Control (RBAC), and background job processing.
 
-## Current status
+---
 
-- Working modules: `health`, `auth`
-- Scaffolded modules: `tasks`, `users`, `roles`, `permissions`, `reports`, `schedules`, `tasks_group`, and several `admin/*` modules
-- Persistence: in-memory repository for auth users
-- Authentication: simple bearer token generated from user id and email
+## 🛠️ Tech Stack & Infrastructure
 
-## Requirements
+- **Framework**: [NestJS](https://nestjs.com/) (V11) - Scalable Node.js architecture.
+- **Database**: [PostgreSQL](https://www.postgresql.org/) with [Prisma ORM](https://www.prisma.io/).
+- **Cache & Queue**: [Redis](https://redis.io/) + [BullMQ](https://github.com/OptimalBits/bull) for high-reliability background jobs.
+- **Security**: [Passport.js](https://www.passportjs.org/) + [JWT](https://jwt.io/) (Access / Rotation Refresh Tokens).
+- **Validation**: [class-validator](https://github.com/typestack/class-validator) + [class-transformer](https://github.com/typestack/class-transformer).
+- **Documentation**: [Swagger / OpenAPI](https://swagger.io/) via `@nestjs/swagger`.
+- **Infrastructure**: [Docker](https://www.docker.com/) & [Docker Compose].
 
-- Node.js 20+ recommended
-- npm 10+
+---
 
-## Setup
+## ✨ Key Features
 
+### 🔐 Advanced Security & Auth
+- **JWT Authentication**: Secure login with short-lived access tokens and persistent refresh token rotation.
+- **RBAC (Role-Based Access Control)**: Granular permissions enforced via guards (`JwtAuthGuard`, `RolesGuard`, `AdminGuard`).
+- **User Groups**: Collaborative workspaces where members can be assigned specific roles (Owner, Member).
+
+### 📋 Task & Project Management
+- **Hierarchical Tasks**: Organize tasks within Groups/Projects.
+- **Priority & Status**: Real-time tracking of task states (TODO, IN_PROGRESS, DONE) and priorities (LOW to URGENT).
+- **Reminders & Schedules**: Background notification system powered by Redis and Bull.
+
+### 🛡️ Administrative Control Plane
+Dedicated `/api/admin` namespace for system governance:
+- **Real-time Analytics**: Dashboard stats for global task completion rates and user activity.
+- **System Settings**: Hot-swappable global configuration (Maintenance mode, feature toggles).
+- **Moderation**: Full oversight of system-wide tasks, reports, and user accounts.
+
+---
+
+## 🚀 Getting Started
+
+### 1. Prerequisites
+- Docker & Docker Compose
+- Node.js 20+
+
+### 2. Infrastructure Setup
+Spin up the database and Redis cache:
 ```bash
+docker compose up -d
+```
+
+### 3. Application Setup
+```bash
+# Install dependencies
 npm install
+
+# Generate Prisma Client & Run Migrations
+npx prisma generate
+npx prisma migrate dev
+
+# Seed Initial Data (Roles, Permissions, Admin User)
+npx prisma db seed
 ```
 
-## Run locally
-
+### 4. Running the App
 ```bash
+# Development mode
 npm run start:dev
-```
 
-The server listens on `http://localhost:3000` by default.
-
-## Available endpoints
-
-### Root
-
-- `GET /` -> returns `Hello World!`
-
-### Health
-
-- `GET /health`
-- `GET /health/:id`
-- `DELETE /health/:id`
-
-### Auth
-
-- `POST /auth/register`
-- `POST /auth/login`
-- `GET /auth/me`
-
-## Example auth payloads
-
-### Register
-
-```json
-{
-  "email": "tester@example.com",
-  "name": "Tester",
-  "username": "tester01",
-  "password": "secret123",
-  "confirmPassword": "secret123"
-}
-```
-
-### Login
-
-```json
-{
-  "email": "tester@example.com",
-  "password": "secret123"
-}
-```
-
-To call `GET /auth/me`, send the token returned by register or login:
-
-```http
-Authorization: Bearer <accessToken>
-```
-
-## Scripts
-
-```bash
+# Production build
 npm run build
-npm run start
-npm run start:dev
-npm run lint
-npm run test
-npm run test:e2e
+npm run start:prod
 ```
 
-## Testing
+### 5. API Documentation
+Once running, visit the interactive Swagger UI at:  
+👉 `http://localhost:6969/api/docs`
 
-```bash
-npm test
-npm run test:e2e
+---
+
+## 🧪 Testing
+
+The project maintains a healthy testing suite focused on core business logic:
+- **Unit Tests**: `npm run test`
+- **E2E Tests**: `npm run test:e2e`
+
+---
+
+## 📁 System Architecture Overview
+
+```text
+src/
+├── common/           # Global guards, filters, decorators, Prisma service
+├── config/           # Centralized configuration (Auth, DB, Redis)
+├── modules/          # Domain-driven modules
+│   ├── auth/         # Login, Register, Token rotation logic
+│   ├── admin/        # Administrative sub-modules and dashboards
+│   ├── tasks/        # Core task CRUD and assignment logic
+│   ├── notifications/# Redis/Bull background job processing
+│   └── ...           # Roles, Permissions, Schedules, Files, etc.
+└── main.ts           # Bootstrapping with Swagger and Global Pipes
 ```
-
-Current automated coverage includes:
-
-- unit tests for `AuthService`
-- controller/module smoke tests
-- e2e tests for root, auth, and health routes
-
-## Next recommended steps
-
-- replace the in-memory auth repository with a real database layer
-- replace the current token format with real JWT access and refresh tokens
-- mount and implement the scaffolded business modules
-- add Swagger or OpenAPI documentation once the routes stabilize

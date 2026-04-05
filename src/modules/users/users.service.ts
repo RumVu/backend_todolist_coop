@@ -1,14 +1,18 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
+import { Prisma } from '../../../prisma/generated-client';
+import { ConfigService } from '@nestjs/config';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
-import { UsersRepository } from './users.repository';
-import { randomUUID, randomBytes } from 'crypto';
-import { ConfigService } from '@nestjs/config';
+import { UsersRepository, UserRecord } from './users.repository';
 import { hashPassword, comparePassword } from '../../common/utils/hash.util';
 
-function toProfile(user: any) {
+function toProfile(user: UserRecord) {
   return {
     id: user.id,
     name: user.name,
@@ -16,6 +20,7 @@ function toProfile(user: any) {
     email: user.email,
     phoneNum: user.phoneNum,
     isActive: user.isActive,
+    roles: (user.roles || []).map((ur) => ur.role.name),
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
   };
@@ -26,7 +31,7 @@ export class UsersService {
   constructor(
     private readonly usersRepo: UsersRepository,
     private readonly configService: ConfigService,
-  ) { }
+  ) {}
 
   async create(createUserDto: CreateUserDto) {
     const normalizedEmail = createUserDto.email.trim().toLowerCase();
@@ -39,31 +44,34 @@ export class UsersService {
       throw new BadRequestException('Username already in use');
     }
 
-    // Nếu Admin không truyền password, hệ thống tự động sinh ra 1 chuỗi 8 ký tự ngẫu nhiên
-    const isAutoPassword = !createUserDto.password;
-    const plainPassword = createUserDto.password || randomBytes(4).toString('hex');
+    const rounds = parseInt(
+      this.configService.get<string>('auth.bcryptSaltRounds', '10') || '10',
+      10,
+    );
+    const passwordHash = await hashPassword(
+      createUserDto.password || '',
+      rounds,
+    );
 
-    // Tiến hành băm (hash) mật khẩu trước khi lưu để bảo mật tuyệt đối
-    const rounds = parseInt(this.configService.get<string>('auth.bcryptSaltRounds', '10') || '10', 10);
-    const passwordHash = await hashPassword(plainPassword, rounds);
-
-    // Ghi dữ liệu vào lưu trữ (Nguồn dữ liệu duy nhất đã được chuẩn hoá)
-    const user = await this.usersRepo.create({
+    const userData: Prisma.UserCreateInput = {
       email: normalizedEmail,
       name: createUserDto.name.trim(),
       username: normalizedUsername,
       phoneNum: createUserDto.phoneNum || null,
-      isActive: true, // Mặc định tài khoản luôn active khi tạo
-      roles: ['user'], // Quyền mặc định
-      passwordHash: passwordHash,
-    });
+      isActive: true,
+      passwordHash,
+      roles: {
+        create: {
+          role: { connect: { name: 'user' } },
+        },
+      },
+    };
 
-    // Thông báo cho Admin biết mật khẩu (nếu là do hệ thống tự sinh ra) để họ gửi cho khách
-    const message = isAutoPassword 
-      ? `Tạo tài khoản thành công. Mật khẩu tự động: ${plainPassword}` 
-      : 'Tạo tài khoản thành công';
-
-    return { message, data: toProfile(user) };
+    const user = await this.usersRepo.create(userData);
+    return {
+      message: 'User created successful',
+      data: toProfile(user),
+    };
   }
 
   async findAll() {
@@ -82,30 +90,41 @@ export class UsersService {
     if (!user) throw new NotFoundException('User not found');
 
     const updated = await this.usersRepo.update(userId, updateProfileDto);
-    return { message: 'Cập nhật hồ sơ cá nhân thành công', data: toProfile(updated) };
+    if (!updated) throw new BadRequestException('Failed to update');
+    return {
+      message: 'Profile update successful',
+      data: toProfile(updated),
+    };
   }
 
   async changePassword(userId: string, changePasswordDto: ChangePasswordDto) {
-    if (changePasswordDto.newPassword !== changePasswordDto.confirmNewPassword) {
-      throw new BadRequestException('Mật khẩu xác nhận không khớp');
+    if (
+      changePasswordDto.newPassword !== changePasswordDto.confirmNewPassword
+    ) {
+      throw new BadRequestException('Confirmed password not match');
     }
 
     const user = await this.usersRepo.findById(userId);
     if (!user) throw new NotFoundException('User not found');
 
-    // Kiểm tra mật khẩu cũ
-    const passwordMatches = await comparePassword(changePasswordDto.oldPassword, user.passwordHash || '');
-    if (!passwordMatches) {
-      throw new BadRequestException('Mật khẩu hiện tại không đúng');
-    }
+    const passwordMatches = await comparePassword(
+      changePasswordDto.oldPassword,
+      user.passwordHash,
+    );
+    if (!passwordMatches)
+      throw new BadRequestException('Incorrect current password');
 
-    // Băm mật khẩu mới và lưu
-    const rounds = parseInt(this.configService.get<string>('auth.bcryptSaltRounds', '10') || '10', 10);
-    const passwordHash = await hashPassword(changePasswordDto.newPassword, rounds);
+    const rounds = parseInt(
+      this.configService.get<string>('auth.bcryptSaltRounds', '10') || '10',
+      10,
+    );
+    const passwordHash = await hashPassword(
+      changePasswordDto.newPassword,
+      rounds,
+    );
 
-    await this.usersRepo.update(userId, { passwordHash } as any);
-
-    return { message: 'Đổi mật khẩu thành công' };
+    await this.usersRepo.update(userId, { passwordHash });
+    return { message: 'Password changed successful' };
   }
 
   async update(id: string, updateUserDto: UpdateUserDto) {
@@ -113,29 +132,30 @@ export class UsersService {
     if (!user) throw new NotFoundException('User not found');
 
     const updateData: any = { ...updateUserDto };
-
-    // Kiểm tra trùng lặp Email và Username nếu Admin có thay đổi
-    if (updateData.email) {
+    if (updateData.email)
       updateData.email = updateData.email.trim().toLowerCase();
-      const existing = await this.usersRepo.findByEmail(updateData.email);
-      if (existing && existing.id !== id) {
-        throw new BadRequestException('Email đã được sử dụng bởi tài khoản khác');
-      }
-    }
-
-    if (updateData.username) {
+    if (updateData.username)
       updateData.username = updateData.username.trim().toLowerCase();
-      const existing = await this.usersRepo.findByUsername(updateData.username);
-      if (existing && existing.id !== id) {
-        throw new BadRequestException('Username đã được sử dụng bởi tài khoản khác');
-      }
+
+    if (updateData.password) {
+      const rounds = parseInt(
+        this.configService.get<string>('auth.bcryptSaltRounds', '10') || '10',
+        10,
+      );
+      updateData.passwordHash = await hashPassword(updateData.password, rounds);
+      delete updateData.password;
     }
 
-    // Nếu Admin quyết định gõ password mới đè lên tài khoản này, ta phải Băm (Hash) nó!
-    if (updateData.password) {
-      const rounds = parseInt(this.configService.get<string>('auth.bcryptSaltRounds', '10') || '10', 10);
-      updateData.passwordHash = await hashPassword(updateData.password, rounds);
-      delete updateData.password; // Không được phép lưu plaintext
+    if (updateData.roles) {
+      const rolesArray = Array.isArray(updateData.roles)
+        ? updateData.roles
+        : [];
+      updateData.roles = {
+        deleteMany: {},
+        create: rolesArray.map((rName: string) => ({
+          role: { connect: { name: rName } },
+        })),
+      };
     }
 
     const updated = await this.usersRepo.update(id, updateData);
@@ -147,6 +167,6 @@ export class UsersService {
     const user = await this.usersRepo.findById(id);
     if (!user) throw new NotFoundException('User not found');
     await this.usersRepo.delete(id);
-    return { message: 'User removed' };
+    return { message: 'User removed successful' };
   }
 }

@@ -15,19 +15,39 @@ describe('AuthService unit', () => {
     authRepository = {
       saveRefreshToken: jest.fn(),
       deleteRefreshTokenByUserId: jest.fn(),
-      findRefreshTokenById: jest.fn()
+      findRefreshTokenById: jest.fn(),
     } as any;
     usersRepository = {
-      findByEmail: jest.fn(async (e) => mockUsers.find(u => u.email === e) || null),
-      findByUsername: jest.fn(async (u) => mockUsers.find(x => x.username === u) || null),
-      create: jest.fn(async (u) => { const user = { ...u, id: 'u1' }; mockUsers.push(user); return user; })
+      findByEmail: jest.fn(
+        async (e) => mockUsers.find((u) => u.email === e) || null,
+      ),
+      findByUsername: jest.fn(
+        async (u) => mockUsers.find((x) => x.username === u) || null,
+      ),
+      create: jest.fn(async (u) => {
+        const user = { ...u, id: 'u1' };
+        mockUsers.push(user);
+        return user;
+      }),
     } as any;
     const jwtService = {
       signAsync: jest.fn().mockResolvedValue('token'),
-      verifyAsync: jest.fn().mockResolvedValue({ exp: Math.floor(Date.now() / 1000) + 1000, tokenId: 'tid', type: 'refresh' }),
+      verifyAsync: jest.fn().mockResolvedValue({
+        exp: Math.floor(Date.now() / 1000) + 1000,
+        tokenId: 'tid',
+        type: 'refresh',
+      }),
     } as unknown as JwtService;
-    const configService = { getOrThrow: jest.fn().mockReturnValue('secret'), get: jest.fn().mockReturnValue('15') } as unknown as ConfigService;
-    authService = new AuthService(authRepository, usersRepository, jwtService, configService);
+    const configService = {
+      getOrThrow: jest.fn().mockReturnValue('secret'),
+      get: jest.fn().mockReturnValue('15'),
+    } as unknown as ConfigService;
+    authService = new AuthService(
+      authRepository,
+      usersRepository,
+      jwtService,
+      configService,
+    );
   });
 
   it('normalizes email and returns an access token when registering', async () => {

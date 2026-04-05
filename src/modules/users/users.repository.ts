@@ -1,57 +1,98 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { User } from '@prisma/client';
+import { User, Prisma } from '../../../prisma/generated-client';
 
-export type UserRecord = User;
+export type UserRecord = Prisma.UserGetPayload<{
+  include: {
+    roles: {
+      include: { role: true };
+    };
+  };
+}>;
 
 @Injectable()
 export class UsersRepository {
-    constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
-    async findByEmail(email: string): Promise<UserRecord | null> {
-        return this.prisma.user.findUnique({ where: { email: email.trim().toLowerCase() } });
-    }
+  async findByEmail(email: string): Promise<UserRecord | null> {
+    return this.prisma.user.findUnique({
+      where: { email: email.trim().toLowerCase() },
+      include: {
+        roles: {
+          include: { role: true },
+        },
+      },
+    });
+  }
 
-    async findByUsername(username: string): Promise<UserRecord | null> {
-        return this.prisma.user.findUnique({ where: { username: username.trim().toLowerCase() } });
-    }
+  async findByUsername(username: string): Promise<UserRecord | null> {
+    return this.prisma.user.findUnique({
+      where: { username: username.trim().toLowerCase() },
+      include: {
+        roles: {
+          include: { role: true },
+        },
+      },
+    });
+  }
 
-    async findByName(name: string): Promise<UserRecord | null> {
-        return this.prisma.user.findFirst({
-            where: { name: { equals: name.trim(), mode: 'insensitive' } }
-        });
-    }
+  async findById(id: string): Promise<UserRecord | null> {
+    return this.prisma.user.findUnique({
+      where: { id },
+      include: {
+        roles: {
+          include: { role: true },
+        },
+      },
+    });
+  }
 
-    async findByPhoneNum(phoneNum: string): Promise<UserRecord | null> {
-        return this.prisma.user.findFirst({ where: { phoneNum: phoneNum.trim() } });
-    }
+  async create(data: Prisma.UserCreateInput): Promise<UserRecord> {
+    return this.prisma.user.create({
+      data,
+      include: {
+        roles: {
+          include: { role: true },
+        },
+      },
+    });
+  }
 
-    async findById(id: string): Promise<UserRecord | null> {
-        return this.prisma.user.findUnique({ where: { id } });
+  async update(
+    id: string,
+    updates: Prisma.UserUpdateInput,
+  ): Promise<UserRecord | null> {
+    try {
+      return await this.prisma.user.update({
+        where: { id },
+        data: updates,
+        include: {
+          roles: {
+            include: { role: true },
+          },
+        },
+      });
+    } catch {
+      return null;
     }
+  }
 
-    async create(data: Omit<UserRecord, 'createdAt' | 'updatedAt' | 'id'> & { id?: string }): Promise<UserRecord> {
-        return this.prisma.user.create({ data });
+  async delete(id: string): Promise<void> {
+    try {
+      await this.prisma.user.delete({ where: { id } });
+    } catch {
+      // ignore
     }
+  }
 
-    async update(id: string, updates: Partial<Omit<UserRecord, 'id' | 'createdAt' | 'updatedAt'>>): Promise<UserRecord | null> {
-        try {
-            return await this.prisma.user.update({
-                where: { id },
-                data: updates,
-            });
-        } catch {
-            return null; // Trả về null nếu không tìm thấy User để update (giống logic cũ)
-        }
-    }
-
-    async delete(id: string): Promise<void> {
-        try {
-            await this.prisma.user.delete({ where: { id } });
-        } catch {}
-    }
-
-    async findAll(): Promise<UserRecord[]> {
-        return this.prisma.user.findMany();
-    }
+  async findAll(): Promise<UserRecord[]> {
+    return this.prisma.user.findMany({
+      include: {
+        roles: {
+          include: { role: true },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
 }

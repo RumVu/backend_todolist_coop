@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { TaskGroup, Prisma } from '@prisma/client';
+import { TaskGroup, Prisma } from '../../../prisma/generated-client';
 
 export type TaskGroupRecord = TaskGroup;
 
@@ -15,10 +15,7 @@ export class TasksGroupRepository {
   async findAllByUserId(userId: string): Promise<TaskGroupRecord[]> {
     return this.prisma.taskGroup.findMany({
       where: {
-        OR: [
-          { ownerId: userId },
-          { members: { some: { userId } } }
-        ]
+        OR: [{ ownerId: userId }, { members: { some: { userId } } }],
       },
       include: {
         owner: { select: { id: true, name: true, email: true } },
@@ -26,11 +23,11 @@ export class TasksGroupRepository {
           select: {
             role: true,
             joinedAt: true,
-            user: { select: { id: true, name: true, email: true } }
-          }
-        }
+            user: { select: { id: true, name: true, email: true } },
+          },
+        },
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
     });
   }
 
@@ -39,18 +36,21 @@ export class TasksGroupRepository {
       where: { id },
       include: {
         owner: { select: { id: true, name: true, email: true } },
-        members: { select: { userId: true, role: true } }
-      }
+        members: { select: { userId: true, role: true } },
+      },
     });
   }
 
   async addMember(groupId: string, userId: string, role: string) {
     return this.prisma.groupMember.create({
-      data: { groupId, userId, role }
+      data: { groupId, userId, role },
     });
   }
 
-  async update(id: string, data: Prisma.TaskGroupUpdateInput): Promise<TaskGroupRecord> {
+  async update(
+    id: string,
+    data: Prisma.TaskGroupUpdateInput,
+  ): Promise<TaskGroupRecord> {
     return this.prisma.taskGroup.update({ where: { id }, data });
   }
 
@@ -59,21 +59,21 @@ export class TasksGroupRepository {
   }
 
   async getMember(groupId: string, userId: string): Promise<any | null> {
-      return this.prisma.groupMember.findUnique({
-          where: { groupId_userId: { groupId, userId } }
-      });
+    return this.prisma.groupMember.findUnique({
+      where: { groupId_userId: { groupId, userId } },
+    });
   }
 
   async updateMemberRole(groupId: string, userId: string, role: string) {
     return this.prisma.groupMember.update({
       where: { groupId_userId: { groupId, userId } },
-      data: { role }
+      data: { role },
     });
   }
 
   async removeMember(groupId: string, userId: string) {
     return this.prisma.groupMember.delete({
-      where: { groupId_userId: { groupId, userId } }
+      where: { groupId_userId: { groupId, userId } },
     });
   }
 }

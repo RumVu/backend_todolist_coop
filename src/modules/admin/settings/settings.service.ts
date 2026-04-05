@@ -1,28 +1,36 @@
-import { Injectable } from '@nestjs/common';
-import { CreateSettingDto } from './dto/create-setting.dto';
-import { UpdateSettingDto } from './dto/update-setting.dto';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '../../../common/prisma/prisma.service';
 
 @Injectable()
 export class SettingsService {
-  create(createSettingDto: CreateSettingDto) {
-    void createSettingDto;
-    return 'This action adds a new setting';
+  constructor(private prisma: PrismaService) {}
+
+  async findAll() {
+    return this.prisma.systemSetting.findMany();
   }
 
-  findAll() {
-    return `This action returns all settings`;
+  async findOne(key: string) {
+    const setting = await this.prisma.systemSetting.findUnique({
+      where: { key },
+    });
+    if (!setting)
+      throw new NotFoundException(`Setting with key ${key} not found`);
+    return setting;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} setting`;
+  async update(key: string, value: string, description?: string) {
+    return this.prisma.systemSetting.upsert({
+      where: { key },
+      update: { value, description },
+      create: { key, value, description },
+    });
   }
 
-  update(id: number, updateSettingDto: UpdateSettingDto) {
-    void updateSettingDto;
-    return `This action updates a #${id} setting`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} setting`;
+  async remove(key: string) {
+    try {
+      return await this.prisma.systemSetting.delete({ where: { key } });
+    } catch {
+      throw new NotFoundException(`Setting with key ${key} not found`);
+    }
   }
 }

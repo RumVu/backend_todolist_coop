@@ -1,28 +1,116 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '../../../common/prisma/prisma.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 
 @Injectable()
 export class TasksService {
-  create(createTaskDto: CreateTaskDto) {
-    void createTaskDto;
-    return 'This action adds a new task';
+  constructor(private prisma: PrismaService) {}
+
+  async create(createTaskDto: CreateTaskDto) {
+    const {
+      title,
+      description,
+      status,
+      priority,
+      dueDate,
+      creatorId,
+      assigneeId,
+      groupId,
+    } = createTaskDto;
+
+    return this.prisma.task.create({
+      data: {
+        title,
+        description: description || null,
+        status: status || 'TODO',
+        priority: priority || 'MEDIUM',
+        dueDate: dueDate ? new Date(dueDate) : null,
+        creator: { connect: { id: creatorId } },
+        group: { connect: { id: groupId } },
+        ...(assigneeId && { assignee: { connect: { id: assigneeId } } }),
+      },
+      include: {
+        group: { select: { name: true } },
+        creator: { select: { name: true, email: true } },
+        assignee: { select: { name: true, email: true } },
+      },
+    });
   }
 
-  findAll() {
-    return `This action returns all tasks`;
+  async findAll(query?: any) {
+    const { status, priority, groupId, creatorId, assigneeId } = query || {};
+
+    return this.prisma.task.findMany({
+      where: {
+        status,
+        priority,
+        groupId,
+        creatorId,
+        assigneeId,
+      },
+      include: {
+        group: { select: { name: true } },
+        creator: { select: { name: true, email: true } },
+        assignee: { select: { name: true, email: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} task`;
+  async findOne(id: string) {
+    const task = await this.prisma.task.findUnique({
+      where: { id },
+      include: {
+        group: true,
+        creator: true,
+        assignee: true,
+      },
+    });
+    if (!task) throw new NotFoundException(`Task with ID ${id} not found`);
+    return task;
   }
 
-  update(id: number, updateTaskDto: UpdateTaskDto) {
-    void updateTaskDto;
-    return `This action updates a #${id} task`;
+  async update(id: string, updateTaskDto: UpdateTaskDto) {
+    const task = await this.prisma.task.findUnique({ where: { id } });
+    if (!task) throw new NotFoundException(`Task with ID ${id} not found`);
+
+    const { dueDate, assigneeId, groupId, ...rest } = updateTaskDto;
+
+    // Type-safe update data object
+    const updateData: any = {
+      ...rest,
+      dueDate: dueDate ? new Date(dueDate) : undefined,
+    };
+
+    if (groupId) {
+      updateData.group = { connect: { id: groupId } };
+    }
+
+    if (assigneeId !== undefined) {
+      if (assigneeId === null) {
+        updateData.assignee = { disconnect: true };
+      } else {
+        updateData.assignee = { connect: { id: assigneeId } };
+      }
+    }
+
+    return this.prisma.task.update({
+      where: { id },
+      data: updateData,
+      include: {
+        group: { select: { name: true } },
+        creator: { select: { name: true, email: true } },
+        assignee: { select: { name: true, email: true } },
+      },
+    });
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} task`;
+  async remove(id: string) {
+    try {
+      return await this.prisma.task.delete({ where: { id } });
+    } catch {
+      throw new NotFoundException(`Task with ID ${id} not found`);
+    }
   }
 }

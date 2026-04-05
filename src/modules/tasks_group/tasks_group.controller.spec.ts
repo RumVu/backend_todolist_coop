@@ -17,9 +17,9 @@ describe('TasksGroupController', () => {
         { provide: UsersRepository, useValue: {} },
       ],
     })
-    .overrideGuard(JwtAuthGuard)
-    .useValue({ canActivate: () => true })
-    .compile();
+      .overrideGuard(JwtAuthGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
 
     controller = module.get<TasksGroupController>(TasksGroupController);
   });

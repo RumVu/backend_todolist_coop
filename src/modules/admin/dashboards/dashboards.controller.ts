@@ -1,45 +1,25 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-} from '@nestjs/common';
+import { Controller, Get, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { DashboardsService } from './dashboards.service';
-import { CreateDashboardDto } from './dto/create-dashboard.dto';
-import { UpdateDashboardDto } from './dto/update-dashboard.dto';
+import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
+import { AdminGuard } from '../../../common/guards/admin.guard';
 
-@Controller('dashboards')
+@ApiTags('Admin Dashboards')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard, AdminGuard)
+@Controller('admin/dashboards')
 export class DashboardsController {
   constructor(private readonly dashboardsService: DashboardsService) {}
 
-  @Post()
-  create(@Body() createDashboardDto: CreateDashboardDto) {
-    return this.dashboardsService.create(createDashboardDto);
+  @Get('stats')
+  @ApiOperation({ summary: 'Get global system statistics (Admin only)' })
+  getGlobalStats() {
+    return this.dashboardsService.getGlobalStats();
   }
 
-  @Get()
-  findAll() {
-    return this.dashboardsService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.dashboardsService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(
-    @Param('id') id: string,
-    @Body() updateDashboardDto: UpdateDashboardDto,
-  ) {
-    return this.dashboardsService.update(+id, updateDashboardDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.dashboardsService.remove(+id);
+  @Get('recent')
+  @ApiOperation({ summary: 'Get recent activity logs (Admin only)' })
+  getRecentActivity() {
+    return this.dashboardsService.getRecentActivity();
   }
 }

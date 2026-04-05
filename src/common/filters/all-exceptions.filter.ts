@@ -30,21 +30,26 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
     // Log the error
     if (httpStatus >= 500) {
-      this.logger.error(`Exception: ${exception instanceof Error ? exception.message : String(exception)}`);
+      this.logger.error(
+        `Exception: ${exception instanceof Error ? exception.message : String(exception)}`,
+      );
       if (exception instanceof Error && exception.stack) {
         this.logger.error(exception.stack);
       }
     } else {
-        this.logger.warn(`Exception: ${exception instanceof Error ? exception.message : String(exception)}`);
+      this.logger.warn(
+        `Exception: ${exception instanceof Error ? exception.message : String(exception)}`,
+      );
     }
 
     const responseBody = {
       statusCode: httpStatus,
       timestamp: new Date().toISOString(),
       path: httpAdapter.getRequestUrl(ctx.getRequest()),
-      message: typeof message === 'object' && message !== null && 'message' in message 
-        ? (message as any).message 
-        : message,
+      message:
+        typeof message === 'object' && message !== null && 'message' in message
+          ? (message as any).message
+          : message,
     };
 
     httpAdapter.reply(ctx.getResponse(), responseBody, httpStatus);

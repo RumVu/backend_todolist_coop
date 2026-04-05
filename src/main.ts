@@ -11,8 +11,12 @@ import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { TrimStringPipe } from './common/pipes/trim-string.pipe';
 
+import { winstonConfig } from './config/winston.config';
+
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    logger: winstonConfig,
+  });
   // Setup Microservices Bridge (Redis Transporter)
   app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.REDIS,
@@ -31,10 +35,12 @@ async function bootstrap() {
   const apiPrefix = configService.get<string>('app.apiPrefix') ?? 'api';
 
   app.setGlobalPrefix(apiPrefix);
-  
+
   // Set up a redirect from the root URL to Swagger so Vercel preview works immediately
   const expressApp = app.getHttpAdapter().getInstance();
-  expressApp.get('/', (req: any, res: any) => res.redirect(`/${apiPrefix}/docs`));
+  expressApp.get('/', (req: any, res: any) =>
+    res.redirect(`/${apiPrefix}/docs`),
+  );
 
   app.useGlobalPipes(
     new TrimStringPipe(),
@@ -47,7 +53,7 @@ async function bootstrap() {
 
   app.useGlobalInterceptors(
     new LoggingInterceptor(),
-    new ResponseInterceptor()
+    new ResponseInterceptor(),
   );
   app.useGlobalFilters(new HttpExceptionFilter());
 
@@ -56,7 +62,7 @@ async function bootstrap() {
     setupSwagger(app);
   } catch (err) {
     // swallow; swagger is optional
-    // eslint-disable-next-line no-console
+
     console.warn('Failed to setup Swagger:', err?.message ?? err);
   }
 
@@ -65,12 +71,13 @@ async function bootstrap() {
     return expressApp;
   }
 
-  const port = configService.get<number>('app.port') ?? process.env.PORT ?? 6969;
+  const port =
+    configService.get<number>('app.port') ?? process.env.PORT ?? 6969;
   // Khởi động cả REST API lẫn hệ thống Microservices lắng nghe song song
   await app.startAllMicroservices();
   await app.listen(port);
-  
-  Logger.log(`🚀 REST API chạy trên: http://localhost:${port}/${apiPrefix}`);
+
+  Logger.log(`REST API running on: http://localhost:${port}/${apiPrefix}`);
 }
 
 const bootstrapPromise = bootstrap();

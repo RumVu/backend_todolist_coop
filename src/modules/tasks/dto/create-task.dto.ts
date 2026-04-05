@@ -1,4 +1,11 @@
-import { IsNotEmpty, IsOptional, IsString, IsEnum, IsDateString, IsUUID } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsEnum,
+  IsDateString,
+  IsUUID,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export enum TaskStatus {
@@ -14,7 +21,10 @@ export enum TaskPriority {
 }
 
 export class CreateTaskDto {
-  @ApiProperty({ description: 'ID của danh sách công việc (Group)', example: 'uuid-group-123' })
+  @ApiProperty({
+    description: 'ID của danh sách công việc (Group)',
+    example: 'uuid-group-123',
+  })
   @IsNotEmpty()
   @IsUUID()
   groupId: string;
@@ -34,11 +44,16 @@ export class CreateTaskDto {
   @IsDateString()
   dueDate?: string;
 
-  @ApiProperty({ description: 'Độ ưu tiên', enum: TaskPriority, default: TaskPriority.MEDIUM, required: false })
+  @ApiProperty({
+    description: 'Độ ưu tiên',
+    enum: TaskPriority,
+    default: TaskPriority.MEDIUM,
+    required: false,
+  })
   @IsOptional()
   @IsEnum(TaskPriority)
   priority?: TaskPriority;
-  
+
   @ApiProperty({ description: 'Ai làm', required: false })
   @IsOptional()
   @IsUUID()

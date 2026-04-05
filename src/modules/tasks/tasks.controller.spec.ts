@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { TasksController } from './tasks.controller';
 import { TasksService } from './tasks.service';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 
 describe('TasksController', () => {
@@ -11,11 +12,12 @@ describe('TasksController', () => {
       controllers: [TasksController],
       providers: [
         { provide: TasksService, useValue: {} },
+        { provide: CACHE_MANAGER, useValue: {} },
       ],
     })
-    .overrideGuard(JwtAuthGuard)
-    .useValue({ canActivate: () => true })
-    .compile();
+      .overrideGuard(JwtAuthGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
 
     controller = module.get<TasksController>(TasksController);
   });

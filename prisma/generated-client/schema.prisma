@@ -1,0 +1,159 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "./generated-client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           String   @id @default(uuid())
+  name         String
+  username     String   @unique
+  email        String   @unique
+  passwordHash String
+  phoneNum     String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  roles         UserRole[]
+  refreshTokens RefreshToken[]
+  ownedGroups   TaskGroup[]    @relation("GroupOwner")
+  memberOf      GroupMember[]
+  createdTasks  Task[]         @relation("TaskCreator")
+  assignedTasks Task[]         @relation("TaskAssignee")
+  reports       Report[]       @relation("ReportAuthor")
+}
+
+model Role {
+  id          String           @id @default(uuid())
+  name        String           @unique
+  description String?
+  permissions RolePermission[]
+  users       UserRole[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Permission {
+  id          String           @id @default(uuid())
+  name        String           @unique // e.g., "users:read", "tasks:write"
+  description String?
+  roles       RolePermission[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model UserRole {
+  userId String
+  roleId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role   Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+}
+
+model SystemSetting {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  value       String
+  description String?
+  updatedAt   DateTime @updatedAt
+}
+
+model Schedule {
+  id          String   @id @default(uuid())
+  taskId      String
+  task        Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  remindAt    DateTime
+  type        String   @default("EMAIL") // "EMAIL", "WEBSOCKET"
+  isProcessed Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
+model Report {
+  id        String   @id @default(uuid())
+  title     String
+  data      Json
+  authorId  String
+  author    User     @relation("ReportAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenId   String
+  tokenHash String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model TaskGroup {
+  id          String  @id @default(uuid())
+  name        String
+  description String?
+  ownerId     String
+  owner       User    @relation("GroupOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  tasks   Task[]
+  members GroupMember[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model GroupMember {
+  id       String   @id @default(uuid())
+  groupId  String
+  userId   String
+  role     String   @default("editor") // "viewer", "editor", "admin"
+  joinedAt DateTime @default(now())
+
+  group TaskGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, userId])
+}
+
+model Task {
+  id          String    @id @default(uuid())
+  title       String
+  description String?
+  status      String    @default("TODO") // TODO, IN_PROGRESS, DONE
+  priority    String    @default("MEDIUM") // LOW, MEDIUM, HIGH
+  dueDate     DateTime?
+
+  groupId String
+  group   TaskGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  creatorId String
+  creator   User   @relation("TaskCreator", fields: [creatorId], references: [id], onDelete: Cascade)
+
+  assigneeId String?
+  assignee   User?   @relation("TaskAssignee", fields: [assigneeId], references: [id], onDelete: Cascade)
+
+  schedules Schedule[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

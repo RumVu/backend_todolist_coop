@@ -9,7 +9,9 @@ export class ParseDatePipe implements PipeTransform<string, Date | null> {
     const isValid = !isNaN(date.getTime());
 
     if (!isValid) {
-      throw new BadRequestException(`Validation failed: "${value}" is not a valid ISO-8601 Date string.`);
+      throw new BadRequestException(
+        `Validation failed: "${value}" is not a valid ISO-8601 Date string.`,
+      );
     }
 
     return date;

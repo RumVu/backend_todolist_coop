@@ -3,11 +3,15 @@ import { PipeTransform, Injectable, ArgumentMetadata } from '@nestjs/common';
 @Injectable()
 export class TrimStringPipe implements PipeTransform {
   transform(value: any, metadata: ArgumentMetadata) {
-    if (metadata.type !== 'custom' && typeof value === 'object' && value !== null) {
+    if (
+      metadata.type !== 'custom' &&
+      typeof value === 'object' &&
+      value !== null
+    ) {
       return this.trimObj(value);
     }
     if (typeof value === 'string') {
-        return value.trim();
+      return value.trim();
     }
     return value;
   }

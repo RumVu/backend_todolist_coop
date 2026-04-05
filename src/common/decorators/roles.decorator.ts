@@ -3,9 +3,9 @@ import { SetMetadata } from '@nestjs/common';
 export const ROLES_KEY = 'roles';
 
 /**
- * Decorator @Roles() dùng để gắn nhãn danh sách các quyền (mảng chuỗi) 
+ * Decorator @Roles() dùng để gắn nhãn danh sách các quyền (mảng chuỗi)
  * mà API hiện tại đang yêu cầu.
- * 
+ *
  * Ví dụ: @Roles('admin', 'manager')
  *
  * Mảng quyền này sẽ được SetMetadata nhúng vào hàm hoặc class của Controller.

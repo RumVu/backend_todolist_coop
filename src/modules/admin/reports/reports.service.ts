@@ -1,28 +1,41 @@
-import { Injectable } from '@nestjs/common';
-import { CreateReportDto } from './dto/create-report.dto';
-import { UpdateReportDto } from './dto/update-report.dto';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '../../../common/prisma/prisma.service';
 
 @Injectable()
 export class ReportsService {
-  create(createReportDto: CreateReportDto) {
-    void createReportDto;
-    return 'This action adds a new report';
+  constructor(private prisma: PrismaService) {}
+
+  async findAll() {
+    return this.prisma.report.findMany({
+      include: { author: { select: { name: true, email: true } } },
+      orderBy: { createdAt: 'desc' },
+    });
   }
 
-  findAll() {
-    return `This action returns all reports`;
+  async findOne(id: string) {
+    const report = await this.prisma.report.findUnique({
+      where: { id },
+      include: { author: { select: { name: true, email: true } } },
+    });
+    if (!report) throw new NotFoundException('Report not found');
+    return report;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} report`;
+  async remove(id: string) {
+    try {
+      return await this.prisma.report.delete({ where: { id } });
+    } catch {
+      throw new NotFoundException('Report not found');
+    }
   }
 
-  update(id: number, updateReportDto: UpdateReportDto) {
-    void updateReportDto;
-    return `This action updates a #${id} report`;
-  }
+  async update(id: string, updateReportDto: any) {
+    const report = await this.prisma.report.findUnique({ where: { id } });
+    if (!report) throw new NotFoundException('Report not found');
 
-  remove(id: number) {
-    return `This action removes a #${id} report`;
+    return this.prisma.report.update({
+      where: { id },
+      data: updateReportDto,
+    });
   }
 }

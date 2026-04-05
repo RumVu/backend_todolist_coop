@@ -20,12 +20,17 @@ describe('AuthService', () => {
           provide: JwtService,
           useValue: {
             signAsync: jest.fn().mockResolvedValue('token'),
-            verifyAsync: jest.fn().mockResolvedValue({ exp: Math.floor(Date.now() / 1000) + 1000 }),
+            verifyAsync: jest
+              .fn()
+              .mockResolvedValue({ exp: Math.floor(Date.now() / 1000) + 1000 }),
           },
         },
         {
           provide: ConfigService,
-          useValue: { getOrThrow: jest.fn().mockReturnValue('secret'), get: jest.fn().mockReturnValue('15') },
+          useValue: {
+            getOrThrow: jest.fn().mockReturnValue('secret'),
+            get: jest.fn().mockReturnValue('15'),
+          },
         },
       ],
     }).compile();

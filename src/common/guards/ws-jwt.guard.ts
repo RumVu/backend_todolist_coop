@@ -1,4 +1,9 @@
-import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  CanActivate,
+  ExecutionContext,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { AuthService } from '../../modules/auth/auth.service';
 import { Socket } from 'socket.io';
 
@@ -8,14 +13,16 @@ export class WsJwtGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const client: Socket = context.switchToWs().getClient<Socket>();
-    
+
     // Attempt to extract token from handshake headers or query
-    const token = 
-      this.extractTokenFromHeader(client.handshake.headers) || 
+    const token =
+      this.extractTokenFromHeader(client.handshake.headers) ||
       this.extractTokenFromQuery(client.handshake.query);
 
     if (!token) {
-      throw new UnauthorizedException('Authentication token required for WebSocket connection');
+      throw new UnauthorizedException(
+        'Authentication token required for WebSocket connection',
+      );
     }
 
     try {
@@ -28,7 +35,9 @@ export class WsJwtGuard implements CanActivate {
       };
       return true;
     } catch {
-      throw new UnauthorizedException('Invalid or expired WebSocket authentication token');
+      throw new UnauthorizedException(
+        'Invalid or expired WebSocket authentication token',
+      );
     }
   }
 

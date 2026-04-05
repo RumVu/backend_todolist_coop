@@ -5,6 +5,7 @@
 
 generator client {
   provider = "prisma-client-js"
+  output   = "./generated-client"
 }
 
 datasource db {
@@ -21,12 +22,80 @@ model User {
   isActive      Boolean        @default(true)
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
-  roles         String[]       @default(["user"])
+  
+  roles         UserRole[]
   refreshTokens RefreshToken[]
   ownedGroups   TaskGroup[]    @relation("GroupOwner")
   memberOf      GroupMember[]
   createdTasks  Task[]         @relation("TaskCreator")
   assignedTasks Task[]         @relation("TaskAssignee")
+  reports       Report[]       @relation("ReportAuthor")
+}
+
+model Role {
+  id          String            @id @default(uuid())
+  name        String            @unique
+  description String?
+  permissions RolePermission[]
+  users       UserRole[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Permission {
+  id          String           @id @default(uuid())
+  name        String           @unique // e.g., "users:read", "tasks:write"
+  description String?
+  roles       RolePermission[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model UserRole {
+  userId String
+  roleId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role   Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+}
+
+model SystemSetting {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  value       String
+  description String?
+  updatedAt   DateTime @updatedAt
+}
+
+model Schedule {
+  id        String   @id @default(uuid())
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  remindAt  DateTime
+  type      String   @default("EMAIL") // "EMAIL", "WEBSOCKET"
+  isProcessed Boolean @default(false)
+  createdAt DateTime @default(now())
+}
+
+model Report {
+  id        String   @id @default(uuid())
+  title     String
+  data      Json
+  authorId  String
+  author    User     @relation("ReportAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
 }
 
 model RefreshToken {
@@ -63,7 +132,7 @@ model GroupMember {
   group TaskGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
   user  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([groupId, userId]) // Một người chỉ hiện diện 1 lần/group
+  @@unique([groupId, userId])
 }
 
 model Task {
@@ -82,6 +151,8 @@ model Task {
 
   assigneeId String?
   assignee   User?   @relation("TaskAssignee", fields: [assigneeId], references: [id], onDelete: Cascade)
+
+  schedules Schedule[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -6,7 +6,7 @@ import { NotificationsProcessor } from './notifications.processor';
 @Module({
   imports: [
     BullModule.registerQueue({
-      name: 'email-queue',
+      name: 'notifications',
     }),
   ],
   providers: [NotificationsService, NotificationsProcessor],

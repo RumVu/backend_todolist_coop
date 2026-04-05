@@ -1,4 +1,8 @@
-export function getPaginationData(totalItems: number, page: number, limit: number) {
+export function getPaginationData(
+  totalItems: number,
+  page: number,
+  limit: number,
+) {
   const totalPages = Math.ceil(totalItems / limit);
   return {
     totalItems,

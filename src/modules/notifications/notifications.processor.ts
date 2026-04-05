@@ -1,19 +1,24 @@
-import { Processor, Process } from '@nestjs/bull';
+import { Process, Processor } from '@nestjs/bull';
 import { Logger } from '@nestjs/common';
 import type { Job } from 'bull';
 
-@Processor('email-queue')
+@Processor('notifications')
 export class NotificationsProcessor {
   private readonly logger = new Logger(NotificationsProcessor.name);
 
   @Process('send-email')
-  async handleSendEmail(job: Job) {
-    this.logger.debug(`Bắt đầu quy trình gửi Email cho: ${job.data.to}`);
-    this.logger.debug(`Nội dung: ${job.data.subject}`);
-    
-    // Giả lập thời gian server gọi sang SMTP (VD: SendGrid, NodeMailer) mất 3 giây
-    await new Promise((resolve) => setTimeout(resolve, 3000));
-    
-    this.logger.log(`✅ Hoàn tất gửi Email tới ${job.data.to} (Job ID: ${job.id})`);
+  async handleSendEmail(job: Job<any>) {
+    this.logger.log(`Processing notification job ${job.id}...`);
+    const { to, subject, body } = job.data;
+
+    // Simulation of sending email
+    this.logger.debug(`[SIMULATION] Sending email to: ${to}`);
+    this.logger.debug(`[SIMULATION] Subject: ${subject}`);
+    this.logger.debug(`[SIMULATION] Body: ${body}`);
+
+    await new Promise((resolve) => setTimeout(resolve, 500)); // Simulate delay
+
+    this.logger.log(`Notification job ${job.id} completed successfully.`);
+    return { sent: true, sentAt: new Date().toISOString() };
   }
 }

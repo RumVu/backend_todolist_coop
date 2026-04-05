@@ -3,40 +3,53 @@ import {
   Get,
   Post,
   Body,
-  Patch,
   Param,
   Delete,
+  Patch,
+  UseGuards,
 } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { SettingsService } from './settings.service';
-import { CreateSettingDto } from './dto/create-setting.dto';
 import { UpdateSettingDto } from './dto/update-setting.dto';
+import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
+import { AdminGuard } from '../../../common/guards/admin.guard';
 
-@Controller('settings')
+@ApiTags('Admin System Settings')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard, AdminGuard)
+@Controller('admin/settings')
 export class SettingsController {
   constructor(private readonly settingsService: SettingsService) {}
 
-  @Post()
-  create(@Body() createSettingDto: CreateSettingDto) {
-    return this.settingsService.create(createSettingDto);
-  }
-
   @Get()
+  @ApiOperation({ summary: 'Get all system settings' })
   findAll() {
     return this.settingsService.findAll();
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.settingsService.findOne(+id);
+  @Get(':key')
+  @ApiOperation({ summary: 'Get a specific system setting' })
+  findOne(@Param('key') key: string) {
+    return this.settingsService.findOne(key);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateSettingDto: UpdateSettingDto) {
-    return this.settingsService.update(+id, updateSettingDto);
+  @Patch(':key')
+  @ApiOperation({ summary: 'Update a system setting' })
+  async update(
+    @Param('key') key: string,
+    @Body() updateSettingDto: UpdateSettingDto,
+  ) {
+    const existing = await this.settingsService.findOne(key);
+    return this.settingsService.update(
+      key,
+      updateSettingDto.value ?? existing.value,
+      updateSettingDto.description ?? existing.description ?? undefined,
+    );
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.settingsService.remove(+id);
+  @Delete(':key')
+  @ApiOperation({ summary: 'Delete a system setting' })
+  remove(@Param('key') key: string) {
+    return this.settingsService.remove(key);
   }
 }

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { Task, Prisma } from '@prisma/client';
+import { Task, Prisma } from '../../../prisma/generated-client';
 import { PaginationQueryDto } from '../../shared/dto/pagination-query.dto';
 
 export type TaskRecord = Task;
@@ -13,7 +13,10 @@ export class TasksRepository {
     return this.prisma.task.create({ data });
   }
 
-  async findAllByGroupId(groupId: string, query: PaginationQueryDto): Promise<[TaskRecord[], number]> {
+  async findAllByGroupId(
+    groupId: string,
+    query: PaginationQueryDto,
+  ): Promise<[TaskRecord[], number]> {
     const page = query.page || 1;
     const limit = query.limit || 10;
     const search = query.search || '';
@@ -31,11 +34,11 @@ export class TasksRepository {
         take: limit,
         include: {
           creator: { select: { id: true, name: true } },
-          assignee: { select: { id: true, name: true } }
+          assignee: { select: { id: true, name: true } },
         },
-        orderBy: { createdAt: 'desc' }
+        orderBy: { createdAt: 'desc' },
       }),
-      this.prisma.task.count({ where })
+      this.prisma.task.count({ where }),
     ]);
 
     return [tasks, total];
@@ -47,10 +50,10 @@ export class TasksRepository {
       include: {
         group: {
           include: {
-            members: { select: { userId: true, role: true } }
-          }
-        }
-      }
+            members: { select: { userId: true, role: true } },
+          },
+        },
+      },
     });
   }
 

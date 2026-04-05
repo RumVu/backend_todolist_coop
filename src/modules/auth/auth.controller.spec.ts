@@ -22,9 +22,18 @@ describe('AuthController', () => {
         JwtAuthGuard,
         {
           provide: JwtService,
-          useValue: { signAsync: jest.fn().mockResolvedValue('token'), verifyAsync: jest.fn() },
+          useValue: {
+            signAsync: jest.fn().mockResolvedValue('token'),
+            verifyAsync: jest.fn(),
+          },
         },
-        { provide: ConfigService, useValue: { getOrThrow: jest.fn().mockReturnValue('secret'), get: jest.fn().mockReturnValue('15') } },
+        {
+          provide: ConfigService,
+          useValue: {
+            getOrThrow: jest.fn().mockReturnValue('secret'),
+            get: jest.fn().mockReturnValue('15'),
+          },
+        },
       ],
     }).compile();
 

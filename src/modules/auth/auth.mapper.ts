@@ -7,18 +7,18 @@ import { hashValue } from '../../common/utils/hash.util';
  * Trả về các trường tương tự như `toProfileAccount` trong `AuthService`.
  */
 export function toProfileAccount(user: UserRecord) {
-    return {
-        id: user.id,
-        name: user.name,
-        username: user.username,
-        email: user.email,
-        // phoneNum là tùy chọn — include nếu có
-        ...(user.phoneNum ? { phoneNum: user.phoneNum } : {}),
-        isActive: user.isActive,
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt,
-        ...(user.roles ? { roles: user.roles } : {}),
-    };
+  return {
+    id: user.id,
+    name: user.name,
+    username: user.username,
+    email: user.email,
+    // phoneNum là tùy chọn — include nếu có
+    ...(user.phoneNum ? { phoneNum: user.phoneNum } : {}),
+    isActive: user.isActive,
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
+    ...(user.roles ? { roles: user.roles } : {}),
+  };
 }
 
 /**
@@ -32,15 +32,15 @@ export function toProfileAccount(user: UserRecord) {
  * (lưu ý repository sẽ bổ sung createdAt khi lưu)
  */
 export function buildRefreshTokenSave(
-    token: string,
-    tokenId: string,
-    userId: string,
-    expiresAt: string,
+  token: string,
+  tokenId: string,
+  userId: string,
+  expiresAt: string,
 ): Omit<refreshTokenRecord, 'id' | 'createdAt'> {
-    return {
-        userId,
-        tokenId,
-        tokenHash: hashValue(token),
-        expiresAt: new Date(expiresAt),
-    };
+  return {
+    userId,
+    tokenId,
+    tokenHash: hashValue(token),
+    expiresAt: new Date(expiresAt),
+  };
 }

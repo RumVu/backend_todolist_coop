@@ -9,13 +9,16 @@ import { Reflector } from '@nestjs/core';
 import { AuthService } from '../../modules/auth/auth.service';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 
-type AuthenticatedRequest = Request & {
-  user?: { userId: string; email?: string; name?: string; roles?: string[] };
-};
+interface RequestWithUser extends Request {
+  user: { userId: string; email?: string; name?: string; roles?: string[] };
+}
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
-  constructor(private readonly authService: AuthService, private reflector: Reflector) { }
+  constructor(
+    private readonly authService: AuthService,
+    private reflector: Reflector,
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
@@ -26,7 +29,7 @@ export class JwtAuthGuard implements CanActivate {
       return true;
     }
 
-    const request = context.switchToHttp().getRequest();
+    const request = context.switchToHttp().getRequest<RequestWithUser>();
     const authHeader = request.headers.authorization;
 
     if (!authHeader) {
@@ -45,10 +48,11 @@ export class JwtAuthGuard implements CanActivate {
       userId: payload.sub,
       email: payload.email,
       name: payload.name,
-      ...(payload.hasOwnProperty('roles') ? { roles: (payload as any).roles } : {}),
+      ...(Object.prototype.hasOwnProperty.call(payload, 'roles')
+        ? { roles: (payload as any).roles }
+        : {}),
     };
 
     return true;
   }
-
 }

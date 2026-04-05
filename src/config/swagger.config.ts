@@ -2,156 +2,123 @@ import { INestApplication } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 export function setupSwagger(app: INestApplication) {
-    const config = new DocumentBuilder()
-        .setTitle('Backend Coop API')
-        .setDescription('API documentation for Coop')
-        .setVersion('1.0')
-        .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' })
-        .build();
+  const config = new DocumentBuilder()
+    .setTitle('Backend Coop API Documentation')
+    .setDescription(
+      `
+            ### Backend Coop API - Enterprise Group Management System
+            
+            Welcome to the official API documentation for the Coop Platform. This system is architected for scalability, security, and performance:
+            
+            - **Core Engine**: Built on NestJS 11, ensuring high performance and enterprise-grade stability.
+            - **Real-time Synchronization**: Integrated Socket.io for instant data synchronization across group members.
+            - **Microservices Architecture**: Modular design utilizing Redis Transporter for inter-service communication (Message & Event Patterns).
+            - **Security & RBAC**: Multi-layered security with JWT authentication, Passport strategies, Rate Limiting (Throttler), and Role-Based Access Control (RBAC).
+            - **Centralized File Management**: Robust storage management system with intelligent file handling and validation.
+            - **Database & Data Integrity**: High-performance data access layer using Prisma ORM and PostgreSQL.
+            - **Background Job Processing**: Asynchronous task execution and distributed queueing using BullQueue and Redis.
+            
+            This documentation provides a comprehensive overview of endpoints, request models, and response structures for developers.
+            `,
+    )
+    .setVersion('1.0')
+    .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' })
+    .build();
 
-    const document = SwaggerModule.createDocument(app, config);
-    SwaggerModule.setup('api/docs', app, document, {
-        customSiteTitle: 'Retro Coop API 👾',
-        customfavIcon: 'https://nestjs.com/img/logo-math-scale.svg',
-        customCss: `
-            @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+  const document = SwaggerModule.createDocument(app, config);
+  const apiPrefix = process.env.API_PREFIX || 'api';
 
-            /* Reset font and borders */
+  SwaggerModule.setup(`${apiPrefix}/docs`, app, document, {
+    customSiteTitle: 'Backend Coop API | Documentation',
+    customfavIcon: 'https://nestjs.com/img/logo-math-scale.svg',
+    customCss: `
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+            /* Reset font and professional typography */
             .swagger-ui, .swagger-ui *, body {
-                font-family: 'Press Start 2P', system-ui !important;
-                border-radius: 0 !important;
-                font-size: 11px !important;
+                font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+                border-radius: 4px !important;
             }
 
-            /* Dark espresso background */
-            body { background-color: #3B231D !important; margin: 20px; }
-            .swagger-ui .scheme-container, .swagger-ui .info .base-url { background: transparent !important; color: #CBB682; }
-
-            /* Sand/Beige color for titles and fonts */
+            /* Modern Dark Theme */
+            body { background-color: #1a1a1a !important; margin: 0; padding: 0; }
+            .swagger-ui .scheme-container, .swagger-ui .info .base-url { background: #262626 !important; border-bottom: 1px solid #404040; }
+            
+            /* Professional Header */
             .swagger-ui .info .title {
-                color: #CBB682 !important; 
-                text-shadow: 2px 2px 0 #986441;
-                font-size: 24px !important;
+                color: #ffffff !important; 
+                font-weight: 700 !important;
+                font-size: 32px !important;
             }
             
-            /* Text colors */
-            .swagger-ui { color: #CBB682 !important; }
-            .swagger-ui .info p { color: #B48259 !important; }
-
-            /* API Block styling: dark chocolate with terra cotta borders */
-            .swagger-ui .opblock {
-                background: #562B22 !important;
-                border: 2px solid #CBB682 !important;
-                box-shadow: 4px 4px 0 #986441 !important;
-                margin-bottom: 25px !important;
+            /* Documentation Text */
+            .swagger-ui .info p, 
+            .swagger-ui .info li, 
+            .swagger-ui .info h1,
+            .swagger-ui .info h2,
+            .swagger-ui .info h3, 
+            .swagger-ui .info h4,
+            .swagger-ui .info strong,
+            .swagger-ui .info span,
+            .swagger-ui .info a { 
+                color: #d1d1d1 !important; 
             }
-            .swagger-ui .opblock .opblock-summary { border-bottom: 1px dashed #CBB682 !important; padding: 10px !important; }
-            .swagger-ui .opblock .opblock-summary-path { color: #CBB682 !important; }
-            .swagger-ui .opblock .opblock-summary-description { color: #B48259 !important; }
 
-            /* HTTP Method buttons: Caramel */
+            .swagger-ui .info .description p,
+            .swagger-ui .info .description li {
+                line-height: 1.6 !important;
+            }
+
+            /* API Operation Blocks */
+            .swagger-ui .opblock {
+                background: #262626 !important;
+                border: 1px solid #404040 !important;
+                box-shadow: none !important;
+                margin-bottom: 12px !important;
+            }
+            .swagger-ui .opblock .opblock-summary { border-bottom: 1px solid #404040 !important; padding: 12px !important; }
+            .swagger-ui .opblock .opblock-summary-path { font-weight: 600 !important; color: #ffffff !important; }
+            .swagger-ui .opblock .opblock-summary-description { color: #a3a3a3 !important; }
+
+            /* Method Labels */
             .swagger-ui .opblock .opblock-summary-method {
-                background: #C27A44 !important;
-                color: #3B231D !important;
-                border: 2px solid #CBB682 !important;
-                box-shadow: 2px 2px 0 #986441 !important;
-                text-transform: uppercase;
+                border-radius: 4px !important;
+                font-weight: 700 !important;
                 min-width: 80px;
                 text-align: center;
+                background: #404040 !important;
+                color: #ffffff !important;
             }
 
             /* Tables and Inputs */
-            .swagger-ui table thead tr td, .swagger-ui table thead tr th { color: #CBB682 !important; border-bottom: 1px solid #CBB682; }
-            .swagger-ui .parameter__name, .swagger-ui .parameter__type { color: #C27A44 !important; }
+            .swagger-ui table thead tr td, .swagger-ui table thead tr th { color: #ffffff !important; border-bottom: 1px solid #404040; }
+            .swagger-ui .parameter__name, .swagger-ui .parameter__type { color: #60a5fa !important; }
             
             .swagger-ui input, .swagger-ui textarea, .swagger-ui select {
-                background: #3B231D !important;
-                border: 2px solid #CBB682 !important;
-                color: #CBB682 !important;
+                background: #1a1a1a !important;
+                border: 1px solid #404040 !important;
+                color: #ffffff !important;
             }
 
-            /* Action Buttons */
+            /* Buttons */
             .swagger-ui .btn {
-                background: #986441 !important;
-                color: #3B231D !important;
-                border: 2px solid #3B231D !important;
-                box-shadow: 2px 2px 0 #562B22 !important;
+                background: #3b82f6 !important;
+                color: #ffffff !important;
+                border: none !important;
+                font-weight: 600 !important;
+                border-radius: 4px !important;
             }
-            .swagger-ui .btn:hover { background: #CBB682 !important; color: #3B231D !important; }
+            .swagger-ui .btn:hover { background: #2563eb !important; }
 
             .swagger-ui .topbar { display: none; }
         `,
-        customJs: [
-            'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.11.0/swagger-ui-bundle.js',
-            'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.11.0/swagger-ui-standalone-preset.js',
-        ],
-        customCssUrl: [
-            'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.11.0/swagger-ui.min.css',
-            'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.11.0/swagger-ui-standalone-preset.min.css',
-        ],
-        customJsStr: `
-            setTimeout(() => {
-                const script = document.createElement('script');
-                script.src = 'https://cdn.jsdelivr.net/npm/mermaid@10.8.0/dist/mermaid.min.js';
-                document.head.appendChild(script);
-                
-                script.onload = () => {
-                    mermaid.initialize({ startOnLoad: false, theme: 'dark', fontFamily: '"Press Start 2P"' });
-                    
-                    fetch('/api/docs-json').then(res => res.json()).then(data => {
-                        let erd = "erDiagram\\n";
-                        const schemas = data.components?.schemas || {};
-                        const relations = [];
-
-                        for (const ObjectName in schemas) {
-                            const schema = schemas[ObjectName];
-                            const SafeName = ObjectName.replace(/[^a-zA-Z0-9]/g, '');
-                            erd += "  " + SafeName + " {\\n";
-                            if (schema.properties) {
-                                for (const PropName in schema.properties) {
-                                    const prop = schema.properties[PropName];
-                                    let type = prop.type;
-                                    
-                                    if (!type && prop.$ref) {
-                                        type = prop.$ref.split('/').pop().replace(/[^a-zA-Z0-9]/g, '');
-                                        relations.push({from: SafeName, to: type, name: PropName});
-                                    }
-                                    if (prop.type === 'array' && prop.items && prop.items.$ref) {
-                                        type = prop.items.$ref.split('/').pop().replace(/[^a-zA-Z0-9]/g, '') + "[]";
-                                        relations.push({from: SafeName, to: type.replace('[]',''), name: PropName});
-                                    }
-                                    
-                                    type = type || 'Any';
-                                    const SafePropName = PropName.replace(/[^a-zA-Z0-9]/g, '_');
-                                    erd += "    " + type + " " + SafePropName + "\\n";
-                                }
-                            }
-                            erd += "  }\\n";
-                        }
-
-                        relations.forEach(rel => {
-                            if (schemas[rel.to] || schemas[rel.to.replace(/Dto$/, '')]) {
-                                erd += "  " + rel.from + " ||--o{ " + rel.to + " : contains\\n";
-                            }
-                        });
-
-                        const container = document.createElement('div');
-                        container.style = "padding: 20px; background: #351C15; border: 2px solid #CBB682; box-shadow: 4px 4px 0 #986441; margin: 25px 0; overflow-x: auto;";
-                        container.innerHTML = '<h2 style="color: #CBB682; text-shadow: 2px 2px 0 #986441; text-align: center; margin-bottom: 20px;">SCHEMA ER DIAGRAM</h2><div id="mermaid-erd-container" style="text-align: center; color: #FFF;">Generating Diagram...</div>';
-                        
-                        const insertTarget = document.querySelector('.models') || document.querySelector('.swagger-ui');
-                        if (insertTarget && insertTarget.parentNode) {
-                            insertTarget.parentNode.insertBefore(container, insertTarget);
-                        }
-                        
-                        mermaid.render('erdSvgGraph', erd).then(result => {
-                            document.getElementById('mermaid-erd-container').innerHTML = result.svg;
-                        }).catch(e => {
-                            document.getElementById('mermaid-erd-container').innerHTML = "Schema Rendering Error: " + e.message;
-                        });
-                    }).catch(err => console.error("Could not load spec JSON for Mermaid:", err));
-                };
-            }, 1000);
-        `,
-    });
+    customJs: [
+      'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.11.0/swagger-ui-bundle.js',
+      'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.11.0/swagger-ui-standalone-preset.js',
+    ],
+    customCssUrl: [
+      'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.11.0/swagger-ui.min.css',
+      'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.11.0/swagger-ui-standalone-preset.min.css',
+    ],
+  });
 }

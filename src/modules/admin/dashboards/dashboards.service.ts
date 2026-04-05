@@ -1,28 +1,62 @@
 import { Injectable } from '@nestjs/common';
-import { CreateDashboardDto } from './dto/create-dashboard.dto';
-import { UpdateDashboardDto } from './dto/update-dashboard.dto';
+import { PrismaService } from '../../../common/prisma/prisma.service';
 
 @Injectable()
 export class DashboardsService {
-  create(createDashboardDto: CreateDashboardDto) {
-    void createDashboardDto;
-    return 'This action adds a new dashboard';
+  constructor(private prisma: PrismaService) {}
+
+  async getGlobalStats() {
+    const [userCount, taskCount, groupCount, statusStats, priorityStats] =
+      await Promise.all([
+        this.prisma.user.count(),
+        this.prisma.task.count(),
+        this.prisma.taskGroup.count(),
+        this.prisma.task.groupBy({
+          by: ['status'],
+          _count: { _all: true },
+        }),
+        this.prisma.task.groupBy({
+          by: ['priority'],
+          _count: { _all: true },
+        }),
+      ]);
+
+    return {
+      overview: {
+        totalUsers: userCount,
+        totalTasks: taskCount,
+        totalGroups: groupCount,
+      },
+      distribution: {
+        status: statusStats.reduce(
+          (acc, curr) => ({ ...acc, [curr.status]: curr._count._all }),
+          {},
+        ),
+        priority: priorityStats.reduce(
+          (acc, curr) => ({ ...acc, [curr.priority]: curr._count._all }),
+          {},
+        ),
+      },
+    };
   }
 
-  findAll() {
-    return `This action returns all dashboards`;
-  }
+  async getRecentActivity() {
+    const [recentTasks, recentUsers] = await Promise.all([
+      this.prisma.task.findMany({
+        take: 5,
+        orderBy: { createdAt: 'desc' },
+        include: { creator: { select: { name: true } } },
+      }),
+      this.prisma.user.findMany({
+        take: 5,
+        orderBy: { createdAt: 'desc' },
+        select: { name: true, email: true, createdAt: true },
+      }),
+    ]);
 
-  findOne(id: number) {
-    return `This action returns a #${id} dashboard`;
-  }
-
-  update(id: number, updateDashboardDto: UpdateDashboardDto) {
-    void updateDashboardDto;
-    return `This action updates a #${id} dashboard`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} dashboard`;
+    return {
+      recentTasks,
+      recentUsers,
+    };
   }
 }
