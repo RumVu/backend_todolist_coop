@@ -75,6 +75,13 @@ Tài liệu test case chi tiết:
 
 - [src/docs/testing/test-cases.md](/Users/rumvu/Documents/backend_todolist/backend_todolist_coop/src/docs/testing/test-cases.md)
 
+CI trên GitHub Actions được cấu hình để chạy:
+
+- `npm run lint`
+- `npm run build`
+- `npm test -- --runInBand`
+- `npm run test:e2e`
+
 ## GitHub Checklist
 
 Trước khi public repo:
@@ -125,6 +132,10 @@ Tại thời điểm cập nhật README này, project đã được verify vớ
 - `npm test -- --runInBand`
 - `npm run test:e2e`
 - `npm run lint`
+
+## License
+
+MIT. Xem [LICENSE](/Users/rumvu/Documents/backend_todolist/backend_todolist_coop/LICENSE).
 
 ## Notes
 
