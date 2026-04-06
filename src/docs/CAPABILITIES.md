@@ -50,3 +50,8 @@ This document provides a comprehensive overview of the current backend system's 
 ---
 
 *Conclusion: The Backend Coop platform is a robust, distributed engine designed for performance, security, and collaborative workflow management.*
+
+
+first, we need to access the terminal by that code: npm start:dev
+second,we need to access the terminal by that code: npx --yes cloudflared tunnel --url http://localhost:6969
+third,we need to access the browser by that code: https://localhost:6969
