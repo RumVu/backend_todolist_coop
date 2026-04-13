@@ -28,7 +28,7 @@ describe('Workflow Integration (e2e)', () => {
     await closeE2EPrisma();
   });
 
-  it('registers, creates a group, creates a task, updates status, and lists tasks through compatible routes', async () => {
+  it('registers, creates a group, persists task status updates, and lists tasks through compatible routes', async () => {
     const registerPayload = {
       name: 'Workflow Tester',
       username: uniqueId('workflow-user'),
@@ -91,6 +91,14 @@ describe('Workflow Integration (e2e)', () => {
 
     expect(updateResponse.body.data.status).toBe('IN_PROGRESS');
 
+    const getTaskResponse = await request(getHttpServer(app))
+      .get(`/api/tasks/${taskId}`)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .expect(200);
+
+    expect(getTaskResponse.body.data.id).toBe(taskId);
+    expect(getTaskResponse.body.data.status).toBe('IN_PROGRESS');
+
     const listResponse = await request(getHttpServer(app))
       .get(`/api/tasks?workspaceId=${groupId}`)
       .set('Authorization', `Bearer ${accessToken}`)
@@ -98,6 +106,12 @@ describe('Workflow Integration (e2e)', () => {
 
     expect(listResponse.body.data).toBeInstanceOf(Array);
     expect(listResponse.body.data.length).toBeGreaterThan(0);
-    expect(listResponse.body.data[0].title).toBe('Complete E2E Setup');
+    const persistedTask = listResponse.body.data.find(
+      (task: { id: string }) => task.id === taskId,
+    ) as { id: string; title: string; status: string } | undefined;
+
+    expect(persistedTask).toBeDefined();
+    expect(persistedTask?.title).toBe('Complete E2E Setup');
+    expect(persistedTask?.status).toBe('IN_PROGRESS');
   }, 30000);
 });

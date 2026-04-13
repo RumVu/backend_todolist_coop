@@ -84,11 +84,8 @@ Hầu hết API trả về dạng:
 ```json
 {
   "statusCode": 200,
-  "message": "Success",
-  "data": {
-    "message": "Business message",
-    "data": {}
-  }
+  "message": "Business message",
+  "data": {}
 }
 ```
 
@@ -126,8 +123,8 @@ Request:
 Expected:
 
 - HTTP `201`
-- `data.message = "User registered successfully"`
-- `data.tokens.accessToken` và `data.tokens.refreshToken` tồn tại
+- `message = "User registered successfully"`
+- `tokens.accessToken` và `tokens.refreshToken` tồn tại
 
 ### TC-02 Login with existing account
 
@@ -145,7 +142,7 @@ Request:
 Expected:
 
 - HTTP `201`
-- `data.message = "Login successful"`
+- `message = "Login successful"`
 - nhận được `accessToken` và `refreshToken`
 
 ### TC-03 Get current profile
@@ -173,7 +170,7 @@ Request:
 Expected:
 
 - HTTP `201`
-- `data.message = "Token refreshed"`
+- `message = "Token refreshed"`
 - access token mới được cấp
 
 ### TC-05 Create a task group
@@ -216,6 +213,18 @@ Expected:
 - HTTP `201`
 - task được tạo với `status = "TODO"` hoặc giá trị mặc định hiện tại
 
+Payload có thể gửi:
+
+```json
+{
+  "title": "Ship CV-ready backend",
+  "description": "Manual verification task",
+  "priority": "HIGH",
+  "status": "TODO",
+  "groupId": "<groupId>"
+}
+```
+
 ### TC-07 List tasks by group
 
 - Endpoint: `GET /api/tasks?groupId=<groupId>`
@@ -224,8 +233,34 @@ Expected:
 Expected:
 
 - HTTP `200`
-- `data.data` là mảng
+- `data` là mảng
 - chứa task đã tạo ở TC-06
+
+Các alias hiện backend cũng chấp nhận:
+
+- `GET /api/tasks?workspaceId=<groupId>`
+- `GET /api/tasks?taskGroupId=<groupId>`
+- `GET /api/tasks?id=<groupId>`
+
+### TC-07A Update task status and verify persistence
+
+- Endpoint: `PATCH /api/tasks/:id`
+- Header: `Authorization: Bearer <accessToken>`
+
+Request:
+
+```json
+{
+  "status": "IN_PROGRESS"
+}
+```
+
+Expected:
+
+- HTTP `200`
+- `data.status = "IN_PROGRESS"`
+- gọi lại `GET /api/tasks/:id` vẫn phải thấy `status = "IN_PROGRESS"`
+- gọi lại `GET /api/tasks?groupId=<groupId>` vẫn phải thấy task đó có `status = "IN_PROGRESS"`
 
 ### TC-08 Admin creates a user
 
