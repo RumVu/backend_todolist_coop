@@ -24,7 +24,7 @@ describe('Users e2e (admin CRUD)', () => {
       .send({ email: 'admin@ex.com', password: 'admin123' })
       .expect(201);
 
-    adminAccessToken = loginRes.body.data.tokens.accessToken as string;
+    adminAccessToken = loginRes.body.tokens.accessToken as string;
   });
 
   afterAll(async () => {
@@ -48,7 +48,7 @@ describe('Users e2e (admin CRUD)', () => {
       .send(createPayload)
       .expect(201);
 
-    const created = createRes.body.data.data;
+    const created = createRes.body.data;
     expect(created.email).toBe(email);
     const id = created.id as string;
 
@@ -57,14 +57,14 @@ describe('Users e2e (admin CRUD)', () => {
       .set('Authorization', `Bearer ${adminAccessToken}`)
       .expect(200);
 
-    expect(Array.isArray(listRes.body.data.data)).toBe(true);
+    expect(Array.isArray(listRes.body.data)).toBe(true);
 
     const getRes = await request(getHttpServer(app))
       .get(`/api/users/${id}`)
       .set('Authorization', `Bearer ${adminAccessToken}`)
       .expect(200);
 
-    expect(getRes.body.data.data.email).toBe(email);
+    expect(getRes.body.data.email).toBe(email);
 
     const updateRes = await request(getHttpServer(app))
       .patch(`/api/users/${id}`)
@@ -72,7 +72,7 @@ describe('Users e2e (admin CRUD)', () => {
       .send({ name: 'Updated E2E' })
       .expect(200);
 
-    expect(updateRes.body.data.data.name).toBe('Updated E2E');
+    expect(updateRes.body.data.name).toBe('Updated E2E');
 
     await request(getHttpServer(app))
       .delete(`/api/users/${id}`)

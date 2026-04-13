@@ -28,7 +28,7 @@ describe('Workflow Integration (e2e)', () => {
     await closeE2EPrisma();
   });
 
-  it('registers, creates a group, creates a task, and lists tasks in that group', async () => {
+  it('registers, creates a group, creates a task, updates status, and lists tasks through compatible routes', async () => {
     const registerPayload = {
       name: 'Workflow Tester',
       username: uniqueId('workflow-user'),
@@ -43,18 +43,18 @@ describe('Workflow Integration (e2e)', () => {
       .send(registerPayload)
       .expect(201);
 
-    expect(registerResponse.body.data.data.userAccount.email).toBe(email);
+    expect(registerResponse.body.data.userAccount.email).toBe(email);
 
     const loginResponse = await request(getHttpServer(app))
       .post('/api/auth/login')
       .send({ email, password: 'password123' })
       .expect(201);
 
-    accessToken = loginResponse.body.data.tokens.accessToken as string;
+    accessToken = loginResponse.body.tokens.accessToken as string;
     expect(accessToken).toBeDefined();
 
     const groupResponse = await request(getHttpServer(app))
-      .post('/api/tasks-group')
+      .post('/api/task-groups')
       .set('Authorization', `Bearer ${accessToken}`)
       .send({
         name: 'E2E Test Group',
@@ -62,7 +62,7 @@ describe('Workflow Integration (e2e)', () => {
       })
       .expect(201);
 
-    groupId = groupResponse.body.data.data.id as string;
+    groupId = groupResponse.body.data.id as string;
     expect(groupId).toBeDefined();
 
     const taskResponse = await request(getHttpServer(app))
@@ -72,19 +72,32 @@ describe('Workflow Integration (e2e)', () => {
         title: 'Complete E2E Setup',
         description: 'The final step of enterprise update',
         priority: 'HIGH',
+        status: 'TODO',
         groupId,
       })
       .expect(201);
 
-    expect(taskResponse.body.data.data.title).toBe('Complete E2E Setup');
+    expect(taskResponse.body.data.title).toBe('Complete E2E Setup');
+    const taskId = taskResponse.body.data.id as string;
+    expect(taskResponse.body.data.status).toBe('TODO');
+
+    const updateResponse = await request(getHttpServer(app))
+      .patch(`/api/tasks/${taskId}`)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({
+        status: 'IN_PROGRESS',
+      })
+      .expect(200);
+
+    expect(updateResponse.body.data.status).toBe('IN_PROGRESS');
 
     const listResponse = await request(getHttpServer(app))
-      .get(`/api/tasks?groupId=${groupId}`)
+      .get(`/api/tasks?workspaceId=${groupId}`)
       .set('Authorization', `Bearer ${accessToken}`)
       .expect(200);
 
-    expect(listResponse.body.data.data).toBeInstanceOf(Array);
-    expect(listResponse.body.data.data.length).toBeGreaterThan(0);
-    expect(listResponse.body.data.data[0].title).toBe('Complete E2E Setup');
+    expect(listResponse.body.data).toBeInstanceOf(Array);
+    expect(listResponse.body.data.length).toBeGreaterThan(0);
+    expect(listResponse.body.data[0].title).toBe('Complete E2E Setup');
   }, 30000);
 });

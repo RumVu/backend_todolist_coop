@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Controller,
   Get,
   Post,
@@ -50,7 +51,14 @@ export class TasksController {
     @CurrentUser('userId') userId: string,
     @Query() query: FindTasksQueryDto,
   ) {
-    return this.tasksService.findAllByGroup(userId, query.groupId, query);
+    const groupId = query.resolvedGroupId;
+    if (!groupId) {
+      throw new BadRequestException(
+        'A valid groupId, workspaceId, taskGroupId, or id query parameter is required',
+      );
+    }
+
+    return this.tasksService.findAllByGroup(userId, groupId, query);
   }
 
   @Get(':id')

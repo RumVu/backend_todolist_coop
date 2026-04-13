@@ -61,6 +61,7 @@ export class TasksService {
         ? new Date(createTaskDto.dueDate)
         : undefined,
       priority: createTaskDto.priority,
+      status: createTaskDto.status,
       group: { connect: { id: createTaskDto.groupId } },
       creator: { connect: { id: userId } },
       ...(createTaskDto.assigneeId

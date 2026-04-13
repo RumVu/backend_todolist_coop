@@ -19,7 +19,7 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 @ApiTags('Task Groups (Workspaces)')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
-@Controller('tasks-group')
+@Controller(['tasks-group', 'task-groups'])
 export class TasksGroupController {
   constructor(private readonly tasksGroupService: TasksGroupService) {}
 

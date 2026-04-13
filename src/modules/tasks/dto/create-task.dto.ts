@@ -54,6 +54,16 @@ export class CreateTaskDto {
   @IsEnum(TaskPriority)
   priority?: TaskPriority;
 
+  @ApiProperty({
+    description: 'Trạng thái công việc',
+    enum: TaskStatus,
+    default: TaskStatus.TODO,
+    required: false,
+  })
+  @IsOptional()
+  @IsEnum(TaskStatus)
+  status?: TaskStatus;
+
   @ApiProperty({ description: 'Ai làm', required: false })
   @IsOptional()
   @IsUUID()

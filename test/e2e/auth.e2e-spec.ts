@@ -40,39 +40,39 @@ describe('Auth e2e (full flow)', () => {
       .send(registerPayload)
       .expect(201);
 
-    expect(registerRes.body.data.message).toBe('User registered successfully');
-    expect(registerRes.body.data.data.userAccount.email).toBe(email);
+    expect(registerRes.body.message).toBe('User registered successfully');
+    expect(registerRes.body.data.userAccount.email).toBe(email);
 
     const loginRes = await request(getHttpServer(app))
       .post('/api/auth/login')
       .send({ email, password: 'secret123' })
       .expect(201);
 
-    expect(loginRes.body.data.message).toBe('Login successful');
-    const accessToken = loginRes.body.data.tokens.accessToken as string;
-    const refreshToken = loginRes.body.data.tokens.refreshToken as string;
+    expect(loginRes.body.message).toBe('Login successful');
+    const accessToken = loginRes.body.tokens.accessToken as string;
+    const refreshToken = loginRes.body.tokens.refreshToken as string;
 
     const meRes = await request(getHttpServer(app))
       .get('/api/auth/me')
       .set('Authorization', `Bearer ${accessToken}`)
       .expect(200);
 
-    expect(meRes.body.data.message).toBe('User profile fetched');
-    expect(meRes.body.data.data.email).toBe(email);
+    expect(meRes.body.message).toBe('User profile fetched');
+    expect(meRes.body.data.email).toBe(email);
 
     const refreshRes = await request(getHttpServer(app))
       .post('/api/auth/refresh')
       .send({ refreshToken })
       .expect(201);
 
-    expect(refreshRes.body.data.message).toBe('Token refreshed');
-    expect(refreshRes.body.data.tokens.accessToken).toBeDefined();
+    expect(refreshRes.body.message).toBe('Token refreshed');
+    expect(refreshRes.body.tokens.accessToken).toBeDefined();
 
     const logoutRes = await request(getHttpServer(app))
       .post('/api/auth/logout')
-      .send({ refreshToken: refreshRes.body.data.tokens.refreshToken })
+      .send({ refreshToken: refreshRes.body.tokens.refreshToken })
       .expect(201);
 
-    expect(logoutRes.body.data.message).toBe('Logout successful');
+    expect(logoutRes.body.message).toBe('Logout successful');
   }, 20000);
 });
