@@ -59,6 +59,34 @@ interface AccessTokenResponse {
   type: 'access';
 }
 
+function toExpiresInSeconds(
+  value: string | undefined,
+  fallbackInSeconds: number,
+): number {
+  if (!value) return fallbackInSeconds;
+
+  const normalizedValue = value.trim().toLowerCase();
+  const match = normalizedValue.match(/^(\d+)([smhd])?$/);
+
+  if (!match) return fallbackInSeconds;
+
+  const amount = parseInt(match[1], 10);
+  const unit = match[2] ?? 's';
+
+  switch (unit) {
+    case 's':
+      return amount;
+    case 'm':
+      return amount * 60;
+    case 'h':
+      return amount * 3600;
+    case 'd':
+      return amount * 86400;
+    default:
+      return fallbackInSeconds;
+  }
+}
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -196,15 +224,17 @@ export class AuthService {
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(accessTokenPayload, {
         secret: this.configService.getOrThrow<string>('auth.accessSecret'),
-        expiresIn:
-          parseInt(this.configService.get('auth.accessExpiresIn', '15'), 10) *
-          60,
+        expiresIn: toExpiresInSeconds(
+          this.configService.get<string>('auth.accessExpiresIn', '1h'),
+          3600,
+        ),
       }),
       this.jwtService.signAsync(refreshTokenPayload, {
         secret: this.configService.getOrThrow<string>('auth.refreshSecret'),
-        expiresIn:
-          parseInt(this.configService.get('auth.refreshExpiresIn', '7'), 10) *
-          86400,
+        expiresIn: toExpiresInSeconds(
+          this.configService.get<string>('auth.refreshExpiresIn', '7d'),
+          604800,
+        ),
       }),
     ]);
 
